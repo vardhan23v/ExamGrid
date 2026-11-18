@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Halls')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container-fluid px-4 py-4">
+    <h2 class="page-title mb-3">Exam Halls</h2>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card p-3">
+                <h5 th:text="${hall.id == null} ? 'Add hall' : 'Edit hall'">Add hall</h5>
+                <form th:action="@{/admin/halls/save}" th:object="${hall}" method="post" novalidate>
+                    <input type="hidden" th:field="*{id}">
+                    <div class="mb-2">
+                        <label class="form-label">Hall name</label>
+                        <input class="form-control text-uppercase" th:field="*{hallName}" th:readonly="${hall.id != null}"
+                               th:classappend="${#fields.hasErrors('hallName')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{hallName}"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Block</label>
+                        <input class="form-control" th:field="*{block}" th:classappend="${#fields.hasErrors('block')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{block}"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Rows (benches front to back)</label>
+                            <input type="number" min="1" max="30" class="form-control" th:field="*{numberOfRows}"
+                                   th:classappend="${#fields.hasErrors('numberOfRows')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{numberOfRows}"></div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Columns (seats per row)</label>
+                            <input type="number" min="1" max="20" class="form-control" th:field="*{numberOfColumns}"
+                                   th:classappend="${#fields.hasErrors('numberOfColumns')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{numberOfColumns}"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-navy" type="submit">Save</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/halls}" th:if="${hall.id != null}">Cancel</a>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card p-3">
+                <h5>Halls <span class="badge bg-secondary" th:text="${#lists.size(halls)}">0</span></h5>
+                <table class="table table-sm table-hover align-middle">
+                    <thead><tr><th>Hall</th><th>Block</th><th>Rows</th><th>Columns</th><th>Capacity</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="h : ${halls}">
+                        <td th:text="${h.hallName}"></td>
+                        <td th:text="${h.block}"></td>
+                        <td th:text="${h.numberOfRows}"></td>
+                        <td th:text="${h.numberOfColumns}"></td>
+                        <td><strong th:text="${h.capacity}"></strong></td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/halls/{id}/edit(id=${h.id})}">Edit</a>
+                            <form th:action="@{/admin/halls/{id}/delete(id=${h.id})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete this hall and all its seat allocations?');">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

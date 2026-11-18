@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Allocation')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container-fluid px-4 py-4">
+    <h2 class="page-title mb-1">Seating &amp; Invigilation Allocation</h2>
+    <p class="text-muted">Run step 1 for a slot first. Step 2 assigns invigilators to the halls used in that slot.</p>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="row g-3">
+        <div class="col-xl-6" th:each="slot : ${slots}">
+            <div class="card p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="mb-0" th:text="${#temporals.format(slot.examDate, 'EEE, dd MMM yyyy')}">Date</h5>
+                        <div class="text-muted small" th:text="${slot.startTime} + ' to ' + ${slot.endTime}">Time</div>
+                    </div>
+                    <span class="badge bg-primary" th:text="${#lists.size(slot.subjects)} + ' exam(s)'"></span>
+                </div>
+                <div class="mb-3">
+                    <span class="badge bg-light text-dark border me-1 mb-1" th:each="s : ${slot.subjects}" th:text="${s}"></span>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-auto">
+                    <form th:action="@{/admin/allocation/seating}" method="post">
+                        <input type="hidden" name="date" th:value="${slot.examDate}">
+                        <input type="hidden" name="startTime" th:value="${slot.startTime}">
+                        <button class="btn btn-sm btn-navy" type="submit">1. Generate seating</button>
+                    </form>
+                    <form th:action="@{/admin/allocation/invigilation}" method="post">
+                        <input type="hidden" name="date" th:value="${slot.examDate}">
+                        <input type="hidden" name="startTime" th:value="${slot.startTime}">
+                        <button class="btn btn-sm btn-warning" type="submit">2. Assign invigilators</button>
+                    </form>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       th:href="@{/admin/seating(date=${slot.examDate},startTime=${slot.startTime})}">View plan</a>
+                    <a class="btn btn-sm btn-outline-danger" target="_blank"
+                       th:href="@{/admin/reports/seating(date=${slot.examDate},startTime=${slot.startTime})}">Seating PDF</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12" th:if="${#lists.isEmpty(slots)}">
+            <div class="alert alert-info">No exams scheduled. Add exams in the Exams page first.</div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

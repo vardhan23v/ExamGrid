@@ -1,0 +1,24 @@
+\begin{tikzpicture}[font=\scriptsize,
+  head/.style={draw=egnavy,fill=eglight,rounded corners=2pt,minimum width=2.1cm,minimum height=0.65cm,align=center,font=\scriptsize\bfseries},
+  msg/.style={-{Stealth[length=2mm]},thick},
+  ret/.style={-{Stealth[length=2mm]},dashed}]
+\foreach \x/\n/\t in {0/a/Exam Cell\\(Browser),3.1/c/Allocation\\WebController,6.4/s/SeatingAllocation\\Service,9.7/r/Repositories,12.6/d/MySQL}{
+  \node[head] (\n) at (\x,0) {\t};
+  \draw[eggrey,dashed] (\n.south) -- ++(0,-7.7);
+}
+\draw[msg] (0,-1.0) -- node[above]{POST /admin/allocation/seating} (3.1,-1.0);
+\draw[msg] (3.1,-1.5) -- node[above]{allocateSeats(date, time)} (6.4,-1.5);
+\fill[eggold!25] (6.25,-1.7) rectangle (6.55,-5.9);
+\node[font=\tiny,rotate=90,eggrey] at (6.75,-3.6) {@Transactional};
+\draw[msg] (6.4,-2.0) -- node[above]{findByExamDateAndStartTime} (9.7,-2.0);
+\draw[msg] (6.4,-2.5) -- node[above]{findByBranchAndSemester (per exam)} (9.7,-2.5);
+\draw[msg] (6.4,-3.0) -- node[above]{hallRepository.findAll} (9.7,-3.0);
+\draw[msg] (6.4,-3.5) -- node[above]{deleteSlot (seats, duties)} (9.7,-3.5);
+\draw[msg] (9.7,-3.8) -- node[above]{DELETE} (12.6,-3.8);
+\draw[msg] (6.4,-4.3) -- ++(0.6,0) -- ++(0,-0.35) node[right]{greedy placement loop} -- ++(-0.6,0);
+\draw[msg] (6.4,-5.35) -- node[above]{saveAll(seats)} (9.7,-5.35);
+\draw[msg] (9.7,-5.7) -- node[above]{INSERT batch, COMMIT} (12.6,-5.7);
+\draw[ret] (6.4,-6.2) -- node[above]{SeatingResult} (3.1,-6.2);
+\draw[ret] (3.1,-6.7) -- node[above]{302 redirect /admin/seating + flash} (0,-6.7);
+\draw[msg] (0,-7.2) -- node[above]{GET /admin/seating} (3.1,-7.2);
+\end{tikzpicture}

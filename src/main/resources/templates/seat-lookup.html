@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Seat Lookup')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="page-title mb-1">Find your exam seat</h2>
+            <p class="text-muted">Enter your University Seat Number (USN) to see your hall and seat for each exam.</p>
+            <form id="lookupForm" class="card p-3 mb-4">
+                <div class="input-group input-group-lg">
+                    <input type="text" id="usnInput" class="form-control text-uppercase" placeholder="e.g. NNM24CS224" required>
+                    <button class="btn btn-navy" type="submit">Search</button>
+                </div>
+            </form>
+            <div id="lookupMessage"></div>
+            <div id="seatResults" class="row g-3"></div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/seat-lookup.js}"></script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{examgrid}[2026/11/18 ExamGrid report style]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{mathptmx}
+\RequirePackage[scaled=0.92]{helvet}
+\RequirePackage[a4paper,top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm,headheight=15pt]{geometry}
+\RequirePackage{setspace}
+\RequirePackage[table]{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{array,tabularx,longtable,booktabs,multirow}
+\RequirePackage{float}
+\RequirePackage{caption}
+\RequirePackage{enumitem}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage{listings}
+\RequirePackage{tikz}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+\RequirePackage{pgfgantt}
+\RequirePackage{tcolorbox}
+\RequirePackage[hidelinks]{hyperref}
+
+\usetikzlibrary{shapes.geometric,shapes.misc,shapes.multipart,arrows.meta,positioning,fit,calc,backgrounds,shadows}
+
+\definecolor{egnavy}{RGB}{13,59,102}
+\definecolor{eggold}{RGB}{244,162,89}
+\definecolor{eglight}{RGB}{232,239,247}
+\definecolor{eggrey}{RGB}{90,100,117}
+\definecolor{codebg}{RGB}{248,249,251}
+\definecolor{codekw}{RGB}{0,51,153}
+\definecolor{codestr}{RGB}{163,21,21}
+\definecolor{codecom}{RGB}{0,128,0}
+
+\onehalfspacing
+\emergencystretch=3em
+\setlength{\parskip}{4pt}
+\captionsetup{font=small,labelfont={bf,color=egnavy}}
+\setlist{itemsep=2pt,topsep=4pt}
+
+\titleformat{\section}{\Large\bfseries\color{egnavy}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\large\bfseries\color{egnavy}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.8em}{}
+
+\newcommand{\egdoctitle}{}
+\newcommand{\egdocid}{}
+\newcommand{\setdoc}[2]{\renewcommand{\egdoctitle}{#1}\renewcommand{\egdocid}{#2}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{eggrey}ExamGrid}
+\fancyhead[R]{\small\color{eggrey}\egdoctitle}
+\fancyfoot[L]{\small\color{eggrey}Dept. of CSE, NMAMIT Nitte}
+\fancyfoot[C]{\small\egdocid}
+\fancyfoot[R]{\small Page \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+\lstdefinestyle{java}{
+  language=Java,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!15},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  breaklines=true, showstringspaces=false, tabsize=4,
+  xleftmargin=1.5em, framexleftmargin=1.5em,
+  morekeywords={record,var}
+}
+\lstdefinestyle{plain}{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!15},
+  breaklines=true, showstringspaces=false, columns=fullflexible
+}
+\lstdefinelanguage{json}{
+  morestring=[b]",
+  stringstyle=\color{codestr},
+  literate={:}{{\textcolor{codekw}{:}}}1 {,}{{\textcolor{black}{,}}}1
+}
+\lstdefinestyle{json}{style=plain,language=json}
+\lstdefinestyle{sql}{style=plain,language=SQL,keywordstyle=\color{codekw}\bfseries,morekeywords={REFERENCES,AUTO_INCREMENT,BIGINT,UNIQUE,CONSTRAINT,BIT}}
+\lstdefinestyle{bash}{style=plain,language=bash,keywordstyle=\color{codekw}}
+\lstset{style=plain}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\thead}[1]{\textbf{\color{white}#1}}
+\newcommand{\headrow}{\rowcolor{egnavy}}
+
+\newtcolorbox{notebox}[1][Note]{colback=eglight,colframe=egnavy,fonttitle=\bfseries,title=#1,boxrule=0.6pt,arc=2pt}
+
+\newcommand{\screenshot}[3][0.95]{%
+  \begin{figure}[H]\centering
+  \IfFileExists{screenshots/#2.png}{%
+    \fbox{\includegraphics[width=#1\linewidth]{screenshots/#2.png}}%
+  }{%
+    \fbox{\parbox[c][5.5cm][c]{0.9\linewidth}{\centering\color{eggrey}\small
+      Screenshot placeholder\\[2pt]\texttt{screenshots/\detokenize{#2}.png}\\[2pt]
+      (run the application and save the screen with this file name, then recompile)}}%
+  }
+  \caption{#3}\label{fig:#2}
+  \end{figure}}
+
+\newcommand{\nmamitcover}[3]{%
+  \begin{titlepage}
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[egnavy] (current page.north west) rectangle ([yshift=-4.2cm]current page.north east);
+    \fill[eggold] ([yshift=-4.2cm]current page.north west) rectangle ([yshift=-4.45cm]current page.north east);
+    \node[text=white,font=\Large\bfseries] at ([yshift=-1.6cm]current page.north) {NMAM INSTITUTE OF TECHNOLOGY, NITTE};
+    \node[text=white,font=\small] at ([yshift=-2.35cm]current page.north) {(Off-Campus Centre of NITTE Deemed to be University)};
+    \node[text=white,font=\normalsize] at ([yshift=-3.1cm]current page.north) {Department of Computer Science and Engineering};
+    \fill[egnavy] (current page.south west) rectangle ([yshift=1.6cm]current page.south east);
+    \node[text=white,font=\small] at ([yshift=0.8cm]current page.south) {Java and Spring Framework Laboratory (CS3603-1) \,|\, V Semester B.Tech \,|\, Academic Year 2026--27};
+  \end{tikzpicture}
+  \vspace*{3.6cm}
+  \begin{center}
+  {\color{eggrey}\large #2\par}
+  \vspace{0.6cm}
+  {\color{egnavy}\fontsize{26}{32}\selectfont\bfseries ExamGrid\par}
+  \vspace{0.3cm}
+  {\Large An Automated Exam Seating and Invigilation\\Allocation System using Spring Boot\par}
+  \vspace{0.8cm}
+  {\color{egnavy}\rule{0.5\linewidth}{1pt}}\\[0.5cm]
+  {\LARGE\bfseries #1\par}
+  \vspace{1.2cm}
+  \textbf{Submitted by}\\[0.3cm]
+  \begin{tabular}{l l}
+  Prajwal Jogi & NNM25CS522\\
+  Prajwal Acharya & NNM25CS521\\
+  Sathwik P Shetty & NNM24CS224\\
+  Satvik Hegde & NNM24CS225\\
+  \end{tabular}
+  \vfill
+  #3
+  \end{center}
+  \end{titlepage}}
+
+\newcommand{\doccontrol}[2]{%
+  \section*{Document Control}
+  \begin{tabularx}{\linewidth}{|l|X|}
+  \hline
+  \textbf{Document ID} & #1\\\hline
+  \textbf{Project} & ExamGrid -- Automated Exam Seating and Invigilation Allocation System\\\hline
+  \textbf{Course} & CS3603-1 Java and Spring Framework Laboratory\\\hline
+  \textbf{Version} & 1.0\\\hline
+  \textbf{Status} & #2\\\hline
+  \textbf{Prepared by} & Prajwal Jogi, Prajwal Acharya, Sathwik P Shetty, Satvik Hegde\\\hline
+  \textbf{Date} & November 2026\\\hline
+  \end{tabularx}
+  \vspace{0.6cm}
+  \subsection*{Revision History}
+  \begin{tabularx}{\linewidth}{|c|c|X|l|}
+  \hline
+  \rowcolor{eglight}\textbf{Ver.} & \textbf{Date} & \textbf{Change} & \textbf{Author}\\\hline
+  0.1 & 03-Nov-2026 & Initial draft from approved abstract & Team\\\hline
+  0.5 & 10-Nov-2026 & Updated after design review & Team\\\hline
+  1.0 & 17-Nov-2026 & Baseline after implementation & Team\\\hline
+  \end{tabularx}}
+
+\endinput

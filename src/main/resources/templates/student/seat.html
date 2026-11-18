@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Seat')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-5">
+    <div id="ownSeat" th:attr="data-usn=${student.usn}"></div>
+    <h2 class="page-title mb-1">My exam seats</h2>
+    <p class="text-muted mb-4">
+        <span th:text="${student.name}">Name</span> &middot;
+        <span th:text="${student.usn}">USN</span> &middot;
+        <span th:text="${student.branch} + ' Semester ' + ${student.semester}">Branch</span>
+    </p>
+    <div id="lookupMessage"></div>
+    <div id="seatResults" class="row g-3"></div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/seat-lookup.js}"></script>
+</body>
+</html>

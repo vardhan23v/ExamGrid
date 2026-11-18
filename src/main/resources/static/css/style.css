@@ -1,0 +1,135 @@
+:root {
+    --eg-navy: #0d3b66;
+    --eg-navy-dark: #092a49;
+    --eg-gold: #f4a259;
+    --eg-bg: #f4f6fa;
+}
+
+body {
+    background: var(--eg-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.eg-navbar {
+    background: var(--eg-navy);
+}
+
+.eg-footer {
+    background: #e9edf3;
+    color: #5a6475;
+}
+
+.eg-hero {
+    background: linear-gradient(135deg, var(--eg-navy) 0%, #1d5c8f 100%);
+    color: #fff;
+    border-radius: 1rem;
+}
+
+.page-title {
+    color: var(--eg-navy);
+    font-weight: 700;
+}
+
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(13, 59, 102, 0.08);
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--eg-navy);
+}
+
+.stat-card .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.table thead th {
+    background: var(--eg-navy);
+    color: #fff;
+    font-weight: 500;
+    border: none;
+}
+
+.table-scroll {
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+.btn-navy {
+    background: var(--eg-navy);
+    color: #fff;
+}
+
+.btn-navy:hover {
+    background: var(--eg-navy-dark);
+    color: #fff;
+}
+
+.login-card {
+    max-width: 420px;
+}
+
+.hall-grid {
+    display: grid;
+    gap: 6px;
+}
+
+.seat {
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    min-height: 58px;
+}
+
+.seat .seat-label {
+    font-weight: 700;
+    color: #495057;
+}
+
+.seat.empty {
+    background: #fff;
+    color: #adb5bd;
+    border-style: dashed;
+}
+
+.seat-c0 { background: #cfe2ff; }
+.seat-c1 { background: #d1e7dd; }
+.seat-c2 { background: #fff3cd; }
+.seat-c3 { background: #f8d7da; }
+.seat-c4 { background: #e2d9f3; }
+.seat-c5 { background: #cff4fc; }
+
+.board {
+    background: #343a40;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    padding: 4px;
+    margin-bottom: 10px;
+}
+
+.seat-result-card {
+    border-left: 5px solid var(--eg-gold);
+}
+
+.seat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--eg-navy);
+}

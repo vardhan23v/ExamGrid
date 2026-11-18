@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | ExamGrid'">ExamGrid</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark eg-navbar">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/}">Exam<span class="text-warning">Grid</span></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/dashboard}">Dashboard</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/students}">Students</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/faculty}">Faculty</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/halls}">Halls</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/exams}">Exams</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/allocation}">Allocation</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/duties}">Duties</a></li>
+                <li class="nav-item" sec:authorize="hasRole('FACULTY')"><a class="nav-link" th:href="@{/faculty/duties}">My Duties</a></li>
+                <li class="nav-item" sec:authorize="hasRole('STUDENT')"><a class="nav-link" th:href="@{/student/seat}">My Seat</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/seat-lookup}">Seat Lookup</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-3" sec:authorize="isAuthenticated()">
+                <span class="text-light small">Signed in as <strong sec:authentication="name">user</strong></span>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button class="btn btn-sm btn-outline-light" type="submit">Logout</button>
+                </form>
+            </div>
+            <a class="btn btn-sm btn-warning" th:href="@{/login}" sec:authorize="!isAuthenticated()">Login</a>
+        </div>
+    </div>
+</nav>
+
+<div th:fragment="alerts">
+    <div class="alert alert-success alert-dismissible fade show" th:if="${success}">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade show" th:if="${error}">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+
+<footer th:fragment="footer" class="eg-footer text-center small py-3 mt-5">
+    ExamGrid &middot; CS3603-1 Mini Project &middot; Dept. of CSE, NMAM Institute of Technology, Nitte
+    <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</footer>
+
+</body>
+</html>

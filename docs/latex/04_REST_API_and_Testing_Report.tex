@@ -1,0 +1,432 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{examgrid}
+\setdoc{REST API and Testing Report}{EG-DOC-04}
+\newcommand{\src}{../../src}
+
+\newcommand{\apiendpoint}[4]{%
+\par\medskip\noindent
+\colorbox{egnavy}{\textcolor{white}{\ttfamily\bfseries\,#1\,}}\;\texttt{\bfseries #2}\hfill\colorbox{eglight}{\small Auth: #3}\par
+\noindent{\small #4}\par\smallskip}
+
+\begin{document}
+\nmamitcover{REST API Specification\\and Testing Report}{Document 04 of 05 \,\textbullet\, API contract, curl and Postman usage, Test plan (IEEE 829 style)}{\small Department of Computer Science and Engineering\\[6pt]November 2026}
+
+\pagenumbering{roman}
+\doccontrol{EG-DOC-04}{Approved baseline}
+\newpage
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+\part*{Part A -- REST API Specification}
+\addcontentsline{toc}{part}{Part A -- REST API Specification}
+
+\section{API Conventions}
+\begin{tabularx}{\linewidth}{|L{3.4cm}|X|}
+\hline\headrow\thead{Item} & \thead{Convention}\\\hline
+Base URL & \texttt{http://localhost:8080}\\\hline
+Format & JSON in and out (\texttt{Content-Type: application/json}); UTF-8\\\hline
+Dates and times & ISO-8601: dates \texttt{yyyy-MM-dd}; times in request parameters \texttt{HH:mm}; times in JSON bodies \texttt{HH:mm} or \texttt{HH:mm:ss}; responses use \texttt{HH:mm:ss}\\\hline
+Authentication & HTTP Basic (\texttt{-u user:password} in curl). Seat lookup is public.\\\hline
+Status codes & 200 OK, 201 Created, 204 No Content, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 409 Conflict, 422 Unprocessable Entity, 500 Internal Server Error\\\hline
+Error body & \texttt{ErrorResponse}: \texttt{timestamp, status, error, message, path, fieldErrors}\\\hline
+Sample accounts & \texttt{admin/admin123}; \texttt{FAC101/Welcome@123}; \texttt{NNM24CS224/Welcome@123}\\\hline
+\end{tabularx}
+
+\begin{notebox}[About the example responses]
+The response bodies below are the responses the implementation produces for the bundled sample data, worked out from the code and the deterministic allocation rules (Document 03). Database ids depend on insertion order and timestamps on the clock, so those two values will differ on another machine.
+\end{notebox}
+
+\section{Endpoint Summary}
+\small\begin{longtable}{|p{2.4cm}|p{5.2cm}|p{2.2cm}|p{3.2cm}|}
+\hline\headrow\thead{Method} & \thead{Path} & \thead{Role} & \thead{Purpose}\\\hline\endhead
+GET & /api/students & ADMIN & List students\\\hline
+GET & /api/students/\{id\} & ADMIN & Get one student\\\hline
+POST & /api/students & ADMIN & Create student (+ login)\\\hline
+PUT & /api/students/\{id\} & ADMIN & Update student\\\hline
+DELETE & /api/students/\{id\} & ADMIN & Delete student\\\hline
+GET/POST & /api/faculty & ADMIN & List / create faculty\\\hline
+GET/PUT/DELETE & /api/faculty/\{id\} & ADMIN & Read / update / delete faculty\\\hline
+GET/POST & /api/halls & ADMIN & List / create halls\\\hline
+GET/PUT/DELETE & /api/halls/\{id\} & ADMIN & Read / update / delete hall\\\hline
+GET/POST & /api/exams & ADMIN & List / schedule exams\\\hline
+GET & /api/exams/slots & ADMIN & Exams grouped into slots\\\hline
+GET/PUT/DELETE & /api/exams/\{id\} & ADMIN & Read / update / delete exam\\\hline
+POST & /api/allocations/seating?date=\&startTime= & ADMIN & Run seating engine\\\hline
+GET & /api/allocations/seating?date=\&startTime= & ADMIN & Seats of a slot\\\hline
+POST & /api/allocations/invigilation?date=\&startTime= & ADMIN & Run invigilation engine\\\hline
+GET & /api/seats/\{usn\} & public & Seat lookup by USN\\\hline
+GET & /api/duties[?date=] & ADMIN & Duty roster\\\hline
+GET & /api/duties/faculty/\{code\} & ADMIN, FACULTY (own) & One faculty's roster\\\hline
+GET & /api/duties/workload & ADMIN & Duties per faculty\\\hline
+\end{longtable}
+
+\section{Students}
+\apiendpoint{GET}{/api/students}{ADMIN}{Returns all students ordered by USN.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 http://localhost:8080/api/students
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+[
+  { "id": 3, "usn": "NNM24CS224", "name": "Sathwik P Shetty", "branch": "CSE",
+    "semester": 5, "email": "nnm24cs224@nmamit.in" },
+  { "id": 4, "usn": "NNM24CS225", "name": "Satvik Hegde", "branch": "CSE",
+    "semester": 5, "email": "nnm24cs225@nmamit.in" },
+  ...
+]
+\end{lstlisting}
+
+\apiendpoint{POST}{/api/students}{ADMIN}{Creates a student and a STUDENT login (username = USN, password \texttt{Welcome@123}). Returns \textbf{201 Created}.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST http://localhost:8080/api/students \
+     -H "Content-Type: application/json" \
+     -d '{"usn":"NNM24CS299","name":"Ravi Kumar","branch":"CSE","semester":5,"email":"nnm24cs299@nmamit.in"}'
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "id": 149, "usn": "NNM24CS299", "name": "Ravi Kumar", "branch": "CSE",
+  "semester": 5, "email": "nnm24cs299@nmamit.in" }
+\end{lstlisting}
+Validation failure (\textbf{400}):
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST http://localhost:8080/api/students \
+     -H "Content-Type: application/json" \
+     -d '{"usn":"12","name":"","branch":"CSE","semester":11,"email":"bad"}'
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{
+  "timestamp": "2026-11-20T11:02:41",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "path": "/api/students",
+  "fieldErrors": {
+    "usn": "USN must be 6 to 15 letters or digits",
+    "name": "Name is required",
+    "semester": "Semester must be between 1 and 8",
+    "email": "Enter a valid email"
+  }
+}
+\end{lstlisting}
+Duplicate USN (\textbf{409}):
+\begin{lstlisting}[style=json]
+{ "status": 409, "error": "Conflict",
+  "message": "A student with USN NNM24CS299 already exists", "path": "/api/students", ... }
+\end{lstlisting}
+
+\apiendpoint{PUT}{/api/students/\{id\}}{ADMIN}{Updates name, branch, semester and e-mail (USN is the identity and is not changed).}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X PUT http://localhost:8080/api/students/149 \
+     -H "Content-Type: application/json" \
+     -d '{"usn":"NNM24CS299","name":"Ravi K Kumar","branch":"CSE","semester":5,"email":"ravi@nmamit.in"}'
+\end{lstlisting}
+
+\apiendpoint{DELETE}{/api/students/\{id\}}{ADMIN}{Deletes the student, the seat allocations and the login. Returns \textbf{204 No Content}; unknown id returns 404.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X DELETE -i http://localhost:8080/api/students/149
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "status": 404, "error": "Not Found", "message": "Student not found: 999",
+  "path": "/api/students/999", ... }
+\end{lstlisting}
+
+\section{Faculty}
+\apiendpoint{POST}{/api/faculty}{ADMIN}{Creates a faculty member and a FACULTY login.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST http://localhost:8080/api/faculty \
+     -H "Content-Type: application/json" \
+     -d '{"facultyCode":"FAC111","name":"Prof. Kiran Rao","department":"CSE","email":"kiran.rao@nmamit.in","maxDuties":5}'
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "id": 11, "facultyCode": "FAC111", "name": "Prof. Kiran Rao", "department": "CSE",
+  "email": "kiran.rao@nmamit.in", "maxDuties": 5 }
+\end{lstlisting}
+\texttt{GET /api/faculty}, \texttt{GET/PUT/DELETE /api/faculty/\{id\}} behave like the student endpoints.
+
+\section{Halls}
+\apiendpoint{POST}{/api/halls}{ADMIN}{Creates a hall. \texttt{capacity} is computed and returned, never sent.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST http://localhost:8080/api/halls \
+     -H "Content-Type: application/json" \
+     -d '{"hallName":"LH-202","block":"Academic Block B","numberOfRows":6,"numberOfColumns":6}'
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "id": 5, "hallName": "LH-202", "block": "Academic Block B",
+  "numberOfRows": 6, "numberOfColumns": 6, "capacity": 36 }
+\end{lstlisting}
+
+\section{Exams}
+\apiendpoint{POST}{/api/exams}{ADMIN}{Schedules an exam. Rejected with 400 if the end time is not after the start time or the same class already has an overlapping exam.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST http://localhost:8080/api/exams \
+     -H "Content-Type: application/json" \
+     -d '{"subjectCode":"CS3605","subjectName":"Software Engineering","branch":"CSE","semester":5,"examDate":"2026-12-09","startTime":"09:30","endTime":"12:30"}'
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "id": 9, "subjectCode": "CS3605", "subjectName": "Software Engineering",
+  "branch": "CSE", "semester": 5, "examDate": "2026-12-09",
+  "startTime": "09:30:00", "endTime": "12:30:00" }
+\end{lstlisting}
+Clash with an existing exam of CSE semester 5 on 07-Dec 09:30:
+\begin{lstlisting}[style=json]
+{ "status": 400, "error": "Bad Request",
+  "message": "CSE semester 5 already has CS3603 at this time", ... }
+\end{lstlisting}
+
+\apiendpoint{GET}{/api/exams/slots}{ADMIN}{Exams grouped by date and start time.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 http://localhost:8080/api/exams/slots
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+[
+  { "examDate": "2026-12-07", "startTime": "09:30:00", "endTime": "12:30:00",
+    "subjects": ["CS2301 (CSE-3)", "CS3603 (CSE-5)", "EC3601 (ECE-5)", "ME3601 (ME-5)"] },
+  { "examDate": "2026-12-08", "startTime": "09:30:00", "endTime": "12:30:00",
+    "subjects": ["CS3601 (CSE-5)", "EC3602 (ECE-5)", "ME3602 (ME-5)"] },
+  { "examDate": "2026-12-08", "startTime": "14:00:00", "endTime": "17:00:00",
+    "subjects": ["CS2302 (CSE-3)"] }
+]
+\end{lstlisting}
+
+\section{Allocation}
+\apiendpoint{POST}{/api/allocations/seating?date=2026-12-07\&startTime=09:30}{ADMIN}{Runs the seating engine for the slot and returns a summary.}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST \
+  "http://localhost:8080/api/allocations/seating?date=2026-12-07&startTime=09:30"
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "examDate": "2026-12-07", "startTime": "09:30:00", "examsInSlot": 4,
+  "studentsSeated": 148, "hallsUsed": 3, "adjacentSameSubjectPairs": 0 }
+\end{lstlisting}
+Capacity error (e.g. after deleting all halls except LH-101), \textbf{422}:
+\begin{lstlisting}[style=json]
+{ "status": 422, "error": "Unprocessable Entity",
+  "message": "Insufficient hall capacity: 148 students need seats but only 36 seats are available",
+  "path": "/api/allocations/seating", ... }
+\end{lstlisting}
+
+\apiendpoint{GET}{/api/allocations/seating?date=2026-12-07\&startTime=09:30}{ADMIN}{All seats of the slot ordered by hall, row and column.}
+\begin{lstlisting}[style=json]
+[
+  { "usn": "NNM24CS258", "studentName": "Rahul Amin", "branch": "CSE",
+    "subjectCode": "CS3603", "subjectName": "Java and Spring Framework",
+    "examDate": "2026-12-07", "startTime": "09:30:00", "endTime": "12:30:00",
+    "hallName": "LH-101", "block": "Academic Block A",
+    "seatNumber": "LH-101-A1", "row": 1, "column": 1 },
+  ...
+]
+\end{lstlisting}
+
+\apiendpoint{POST}{/api/allocations/invigilation?date=2026-12-07\&startTime=09:30}{ADMIN}{Assigns invigilators to the halls used in the slot. Requires seating first (otherwise 422).}
+\begin{lstlisting}[style=bash]
+curl -u admin:admin123 -X POST \
+  "http://localhost:8080/api/allocations/invigilation?date=2026-12-07&startTime=09:30"
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "examDate": "2026-12-07", "startTime": "09:30:00", "endTime": "12:30:00",
+  "hallsCovered": 3, "invigilatorsAssigned": 6 }
+\end{lstlisting}
+
+\section{Lookup and Roster}
+\apiendpoint{GET}{/api/seats/\{usn\}}{public}{Seats of one student for all allocated slots. Used by \texttt{seat-lookup.js}.}
+\begin{lstlisting}[style=bash]
+curl http://localhost:8080/api/seats/NNM24CS224
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+[
+  { "usn": "NNM24CS224", "studentName": "Sathwik P Shetty", "branch": "CSE",
+    "subjectCode": "CS3603", "subjectName": "Java and Spring Framework",
+    "examDate": "2026-12-07", "startTime": "09:30:00", "endTime": "12:30:00",
+    "hallName": "SH-01", "block": "Seminar Hall Block C",
+    "seatNumber": "SH-01-A1", "row": 1, "column": 1 }
+]
+\end{lstlisting}
+NNM24CS224 is the first CS3603 student in USN order and CS3603 is the largest group, so the engine gives this student the first seat of the largest hall. Unknown USN returns \textbf{404} with message \texttt{Student not found: XYZ123456}; a known USN without allocations returns \texttt{[]}.
+
+\apiendpoint{GET}{/api/duties/faculty/\{code\}}{ADMIN or the same FACULTY}{Duty roster of one faculty member.}
+\begin{lstlisting}[style=bash]
+curl -u FAC101:Welcome@123 http://localhost:8080/api/duties/faculty/FAC101
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+[
+  { "dutyId": 3, "facultyCode": "FAC101", "facultyName": "Dr. Ramesh Kini",
+    "department": "CSE", "hallName": "LH-201", "block": "Academic Block B",
+    "examDate": "2026-12-07", "startTime": "09:30:00", "endTime": "12:30:00" }
+]
+\end{lstlisting}
+\begin{lstlisting}[style=bash]
+curl -u FAC101:Welcome@123 http://localhost:8080/api/duties/faculty/FAC102
+\end{lstlisting}
+\begin{lstlisting}[style=json]
+{ "status": 403, "error": "Forbidden",
+  "message": "You can only view your own duty roster",
+  "path": "/api/duties/faculty/FAC102", ... }
+\end{lstlisting}
+
+\apiendpoint{GET}{/api/duties/workload}{ADMIN}{Number of duties per faculty, ordered by name.}
+\begin{lstlisting}[style=json]
+{ "Dr. Lakshmi Shenoy": 1, "Dr. Prakash Acharya": 1, "Dr. Ramesh Kini": 1,
+  "Dr. Vinay Hegde": 1, "Prof. Arjun Pai": 1, "Prof. Deepa Kamath": 1,
+  "Prof. Ganesh Bhat": 0, "Prof. Mahesh Shetty": 0, "Prof. Rekha Nayak": 0,
+  "Prof. Sunitha Rao": 0 }
+\end{lstlisting}
+
+\section{Authentication Errors}
+\begin{lstlisting}[style=bash]
+curl -i http://localhost:8080/api/students
+# HTTP/1.1 401   WWW-Authenticate: Basic realm="Realm"
+curl -i -u NNM24CS224:Welcome@123 http://localhost:8080/api/students
+# HTTP/1.1 403   (student role cannot use admin APIs)
+\end{lstlisting}
+
+\section{Postman Collection}
+The file \texttt{docs/postman/ExamGrid.postman\_collection.json} contains all requests above in six folders (Students, Faculty, Halls, Exams, Allocation, Lookup). Import it with \emph{File $\rightarrow$ Import}. The collection variable \texttt{baseUrl} defaults to \texttt{http://localhost:8080}; Basic Auth credentials are set on each request (admin, FAC101 or none).
+
+Recommended run order for a fresh database: \emph{List exam slots} $\rightarrow$ \emph{Generate seating} $\rightarrow$ \emph{Assign invigilators} $\rightarrow$ \emph{Seat lookup by USN} $\rightarrow$ \emph{Faculty roster}.
+
+\newpage
+\part*{Part B -- Test Plan and Test Report}
+\addcontentsline{toc}{part}{Part B -- Test Plan and Test Report}
+
+\section{Test Plan}
+\subsection{Objectives}
+Verify that every functional requirement REQ-F-001 to REQ-F-046 of Document 01 is met, with special focus on the hard constraints of the two allocation engines and on role-based access control.
+
+\subsection{Test Items}
+SeatingAllocationService, InvigilationAllocationService, all REST controllers, security configuration, Thymeleaf pages, PDF export.
+
+\subsection{Test Levels and Approach}
+\begin{tabularx}{\linewidth}{|L{3cm}|L{3.5cm}|X|}
+\hline\headrow\thead{Level} & \thead{Tool} & \thead{What is tested}\\\hline
+Unit / integration & JUnit 5, \texttt{@SpringBootTest}, H2 & Allocation rules on the real Spring context and sample data; each test runs in a transaction that is rolled back.\\\hline
+API & MockMvc, spring-security-test & Status codes, JSON bodies, validation, authorization.\\\hline
+Manual API & Postman, curl & Full request/response cycle against MySQL.\\\hline
+UI / system & Browser (Chrome) & Forms, validation messages, navigation per role, seat grid, PDF download.\\\hline
+\end{tabularx}
+
+\subsection{Environment}
+JDK 17+, Maven 3.9, MySQL 8 (manual tests), H2 in-memory database in MySQL mode (automated tests), Chrome browser, Postman.
+
+\subsection{Entry and Exit Criteria}
+\textbf{Entry:} code compiles, application starts, sample data loaded.\\
+\textbf{Exit:} all automated tests pass, all High-priority manual test cases pass, no open defect of severity High.
+
+\section{Automated Tests}
+Run with:
+\begin{lstlisting}[style=bash]
+mvn test
+\end{lstlisting}
+\subsection{Test Classes}
+\begin{longtable}{|p{5.2cm}|p{6.4cm}|p{1.8cm}|}
+\hline\headrow\thead{Test method} & \thead{Checks} & \thead{Req.}\\\hline\endhead
+\multicolumn{3}{|l|}{\cellcolor{eglight}\textbf{SeatingAllocationServiceTest}}\\\hline
+everyStudentGetsExactlyOneSeat & 148 seated; no USN and no seat number repeated & F-021\\\hline
+neighboursNeverWriteTheSame\-SubjectWhenSpaceAllows & result reports 0 clashes and no right/behind neighbour has the same subject & F-024\\\hline
+noHallIsFilledBeyondItsCapacity & seats per hall $\le$ capacity & F-022\\\hline
+rerunningAllocationReplacesOldPlan & running twice still gives 148 seats & F-026\\\hline
+failsWhenHallsAreTooSmall & only LH-101 left $\Rightarrow$ InsufficientCapacityException & F-023\\\hline
+failsWhenNoExamInSlot & empty slot $\Rightarrow$ AllocationException & F-021\\\hline
+singleSubjectSlotLeavesGaps\-InsteadOfClashing & one subject, 40 students, 0 clashes & F-024\\\hline
+\multicolumn{3}{|l|}{\cellcolor{eglight}\textbf{InvigilationAllocationServiceTest}}\\\hline
+needsSeatingBeforeInvigilation & no seats $\Rightarrow$ AllocationException & F-030\\\hline
+everyUsedHallGetsEnough\-Invigilators & assigned $\ge$ halls covered & F-031\\\hline
+noFacultyHasTwoDutiesAtThe\-SameTime & three slots allocated; no faculty twice in one slot & F-032\\\hline
+workloadIsBalanced & max $-$ min duties $\le$ 1 & F-034\\\hline
+failsWhenFacultyAreNotEnough & all limits 0 $\Rightarrow$ AllocationException & F-033, F-035\\\hline
+invigilatorCountFollowsStudents\-PerInvigilatorRule & 1$\to$1, 30$\to$1, 31$\to$2, 64$\to$3 & F-031\\\hline
+rosterOfUnknownFacultyFails & ResourceNotFoundException & F-042\\\hline
+\multicolumn{3}{|l|}{\cellcolor{eglight}\textbf{ApiControllerTest (MockMvc)}}\\\hline
+seatLookupIsPublic & admin allocates; anonymous lookup of NNM24CS224 returns CS3603 & F-040, F-045\\\hline
+unknownUsnReturns404 & 404 with message & F-046\\\hline
+adminApisNeedLogin & 401 anonymous, 403 student, 200 admin & F-004\\\hline
+invalidStudentIsRejected & 400 with four field errors & F-010, F-046\\\hline
+facultyCanOnlySeeOwnRoster & FAC101 own 200, other 403 & F-042\\\hline
+invigilationBeforeSeatingGives422 & 422 Unprocessable Entity & F-030\\\hline
+\end{longtable}
+
+\subsection{Example Test Code}
+\lstinputlisting[style=java,firstline=60,lastline=81,firstnumber=60,caption={Adjacency test from SeatingAllocationServiceTest}]{\src/test/java/com/examgrid/service/SeatingAllocationServiceTest.java}
+
+\section{Manual Test Cases}
+Columns \emph{Actual} and \emph{Status} are filled in by the tester during execution on the demo machine.
+
+\newcommand{\tc}[6]{#1 & #2 & #3 & #4 & #5 & #6\\\hline}
+\begin{longtable}{|p{1.0cm}|p{2.8cm}|p{3.4cm}|p{3.4cm}|p{1.2cm}|p{1.0cm}|}
+\hline\headrow\thead{ID} & \thead{Scenario} & \thead{Steps / input} & \thead{Expected result} & \thead{Actual} & \thead{Status}\\\hline\endhead
+\multicolumn{6}{|l|}{\cellcolor{eglight}\textbf{Authentication and authorization}}\\\hline
+\tc{TC-01}{Admin login}{admin / admin123}{Redirect to admin dashboard with counters}{}{}
+\tc{TC-02}{Wrong password}{admin / wrong}{Stay on login, ``Invalid username or password''}{}{}
+\tc{TC-03}{Faculty login}{FAC101 / Welcome@123}{My Duties page}{}{}
+\tc{TC-04}{Student login}{NNM24CS224 / Welcome@123}{My exam seats page}{}{}
+\tc{TC-05}{Role violation}{As student open /admin/students}{403 access denied page}{}{}
+\tc{TC-06}{Single session}{Login as admin in two browsers}{First browser redirected to login?expired}{}{}
+\multicolumn{6}{|l|}{\cellcolor{eglight}\textbf{Master data}}\\\hline
+\tc{TC-10}{Add student}{Valid new USN}{Success message with default password; row in table}{}{}
+\tc{TC-11}{Duplicate USN}{USN NNM24CS224}{Error under USN field}{}{}
+\tc{TC-12}{Invalid semester}{Semester 9}{``Semester must be between 1 and 8''}{}{}
+\tc{TC-13}{Edit student}{Change name}{Updated; USN read-only}{}{}
+\tc{TC-14}{Add hall}{LH-202, 6 x 6}{Capacity 36 shown}{}{}
+\tc{TC-15}{Add faculty}{FAC111, max 5}{Row added; FAC111 can log in}{}{}
+\tc{TC-16}{Exam end before start}{10:00 to 09:00}{Error under End time}{}{}
+\tc{TC-17}{Class clash}{CSE-5 on 07-Dec 10:00--11:00}{``CSE semester 5 already has CS3603 at this time''}{}{}
+\tc{TC-18}{Delete student}{Delete a seated student}{Removed; seat disappears from plan}{}{}
+\multicolumn{6}{|l|}{\cellcolor{eglight}\textbf{Seating}}\\\hline
+\tc{TC-20}{Generate seating}{Slot 07-Dec 09:30}{148 students in 3 halls; ``No two neighbouring students write the same subject''}{}{}
+\tc{TC-21}{Visual check}{Inspect hall grids}{No equal colour touches left/right or front/back}{}{}
+\tc{TC-22}{Single subject slot}{Slot 08-Dec 14:00}{Chessboard pattern, 40 seated}{}{}
+\tc{TC-23}{Capacity error}{Delete SH-01, LH-201, LH-102; generate}{Error page ``Insufficient hall capacity''}{}{}
+\tc{TC-24}{Re-generate}{Generate same slot twice}{Plan replaced; duties of slot cleared}{}{}
+\tc{TC-25}{Seating PDF}{Click Seating PDF}{PDF with grid and attendance page per hall}{}{}
+\multicolumn{6}{|l|}{\cellcolor{eglight}\textbf{Invigilation}}\\\hline
+\tc{TC-30}{Before seating}{Assign for 08-Dec 14:00 without seating}{Error ``Generate the seating plan ...''}{}{}
+\tc{TC-31}{Assign duties}{After TC-20}{6 invigilators, 3 halls}{}{}
+\tc{TC-32}{All slots}{Seat and assign all three slots}{14 duties; workload table 1--2 each}{}{}
+\tc{TC-33}{No clash}{Inspect roster}{No faculty twice in one slot}{}{}
+\tc{TC-34}{Not enough faculty}{Set max duties of all faculty to 1, then assign second slot}{Error, no partial roster}{}{}
+\tc{TC-35}{Duty PDF}{Download roster}{PDF table with signature column}{}{}
+\multicolumn{6}{|l|}{\cellcolor{eglight}\textbf{Lookup}}\\\hline
+\tc{TC-40}{Public lookup}{/seat-lookup, NNM24CS224}{Card: SH-01-A1, CS3603, 09:30--12:30}{}{}
+\tc{TC-41}{Unknown USN}{XYZ123456}{Warning ``Student not found''}{}{}
+\tc{TC-42}{Not yet allotted}{Valid USN, no seating}{Info ``Seats have not been allotted''}{}{}
+\tc{TC-43}{Faculty roster}{FAC101 after TC-31}{One row: LH-201}{}{}
+\tc{TC-44}{Mobile view}{Chrome device mode 360 px}{Readable, no horizontal scroll on lookup page}{}{}
+\end{longtable}
+
+\section{Requirement Traceability Matrix}
+\begin{longtable}{|p{2cm}|p{5.6cm}|p{5.0cm}|}
+\hline\headrow\thead{Requirement} & \thead{Automated test} & \thead{Manual test}\\\hline\endhead
+REQ-F-001/002 & -- & TC-01, TC-02, TC-03, TC-04\\\hline
+REQ-F-003 & (BCrypt encoder bean) & DB check: password column starts with \$2a\$\\\hline
+REQ-F-004 & adminApisNeedLogin, facultyCanOnlySeeOwnRoster & TC-05\\\hline
+REQ-F-005 & -- & TC-10, TC-15\\\hline
+REQ-F-006 & -- & TC-06\\\hline
+REQ-F-010 -- 013 & invalidStudentIsRejected & TC-10 -- TC-15\\\hline
+REQ-F-014/015 & -- & TC-16, TC-17\\\hline
+REQ-F-016 & -- & TC-18\\\hline
+REQ-F-021 & everyStudentGetsExactlyOneSeat, failsWhenNoExamInSlot & TC-20\\\hline
+REQ-F-022 & noHallIsFilledBeyondItsCapacity & TC-20\\\hline
+REQ-F-023 & failsWhenHallsAreTooSmall & TC-23\\\hline
+REQ-F-024/025 & neighboursNeverWrite..., singleSubjectSlot... & TC-21, TC-22\\\hline
+REQ-F-026 & rerunningAllocationReplacesOldPlan & TC-24\\\hline
+REQ-F-030 & needsSeatingBeforeInvigilation, invigilationBeforeSeatingGives422 & TC-30\\\hline
+REQ-F-031 & everyUsedHall..., invigilatorCountFollows... & TC-31\\\hline
+REQ-F-032 & noFacultyHasTwoDutiesAtTheSameTime & TC-33\\\hline
+REQ-F-033/035 & failsWhenFacultyAreNotEnough & TC-34\\\hline
+REQ-F-034 & workloadIsBalanced & TC-32\\\hline
+REQ-F-040/041 & seatLookupIsPublic, unknownUsnReturns404 & TC-40 -- TC-42\\\hline
+REQ-F-042 & facultyCanOnlySeeOwnRoster, rosterOfUnknownFacultyFails & TC-43\\\hline
+REQ-F-043/044 & -- & TC-25, TC-35\\\hline
+REQ-F-045/046 & all ApiControllerTest methods & Postman collection\\\hline
+REQ-NF-006 & -- & TC-44\\\hline
+\end{longtable}
+
+\section{Defect Log Template}
+\begin{tabularx}{\linewidth}{|l|X|l|l|l|}
+\hline\headrow\thead{ID} & \thead{Description} & \thead{Severity} & \thead{Found in} & \thead{Status}\\\hline
+BUG-01 & & & & \\\hline
+BUG-02 & & & & \\\hline
+\end{tabularx}
+
+\section{Conclusion}
+The API exposes every operation of the system with a consistent JSON contract and a single error format. Twenty automated tests cover all hard constraints of the seating and invigilation engines and the main security rules, and the manual test cases cover the user interface and PDF output. Together they trace back to every high-priority requirement in the SRS.
+
+\end{document}

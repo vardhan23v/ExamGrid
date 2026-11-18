@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Home')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-5">
+    <div class="eg-hero p-5 mb-5">
+        <h1 class="display-5 fw-bold">ExamGrid</h1>
+        <p class="lead mb-4">Automated exam seating and invigilation allocation for the NMAMIT Examination Cell.
+            Conflict-free seating plans, balanced invigilation duties and printable charts in minutes.</p>
+        <a class="btn btn-warning btn-lg me-2" th:href="@{/seat-lookup}">Find My Seat</a>
+        <a class="btn btn-outline-light btn-lg" th:href="@{/login}">Staff / Student Login</a>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 p-4">
+                <h5 class="page-title">Exam Cell</h5>
+                <p class="text-muted mb-0">Register halls, students, faculty and exams, then generate the seating plan and
+                    invigilation roster with one click. Export seating charts and duty lists as PDF.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4">
+                <h5 class="page-title">Faculty</h5>
+                <p class="text-muted mb-0">View your invigilation duties with date, time and hall. Duties are balanced across
+                    faculty and never overlap.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4">
+                <h5 class="page-title">Students</h5>
+                <p class="text-muted mb-0">Enter your USN to instantly see your exam hall and seat number for every exam.</p>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

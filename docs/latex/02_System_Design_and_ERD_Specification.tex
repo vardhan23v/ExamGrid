@@ -1,0 +1,335 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{examgrid}
+\setdoc{System Design and ERD Specification}{EG-DOC-02}
+
+\begin{document}
+\nmamitcover{System Design and\\ER Model Specification}{Document 02 of 05 \,\textbullet\, High-Level and Low-Level Design}{\small Department of Computer Science and Engineering\\[6pt]November 2026}
+
+\pagenumbering{roman}
+\doccontrol{EG-DOC-02}{Approved baseline}
+\newpage
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+\pagenumbering{arabic}
+
+\section{Introduction}
+\subsection{Purpose}
+This document describes how ExamGrid is built: the overall architecture, the Spring MVC layers, the package and class structure, the MySQL database with its entity-relationship model, the main runtime interactions and the user interface navigation. It refines the requirements of Document 01 (SRS) into a design that the code in the repository follows one-to-one.
+
+\subsection{Design Goals}
+\begin{enumerate}
+  \item \textbf{Separation of concerns} -- presentation, business rules and persistence live in separate layers.
+  \item \textbf{Single source of truth} -- seating and duty rules exist only in two service classes.
+  \item \textbf{Data integrity in the database} -- uniqueness and foreign keys are enforced by MySQL, not only by Java code.
+  \item \textbf{Simplicity} -- a single deployable Spring Boot JAR, readable code suitable for a B.Tech viva.
+\end{enumerate}
+
+\section{Architectural Overview}
+ExamGrid uses a classic \textbf{layered Model--View--Controller (MVC)} architecture on top of Spring Boot. Each HTTP request first passes through the Spring Security filter chain, then reaches a controller. Controllers only translate HTTP to Java method calls and choose a view or a JSON response; all decisions are taken in the service layer; services use Spring Data JPA repositories to read and write MySQL.
+
+\begin{figure}[H]\centering
+\resizebox{0.85\linewidth}{!}{\input{figures/architecture}}
+\caption{Layered MVC architecture of ExamGrid}\label{fig:arch}
+\end{figure}
+
+\subsection{Layer Responsibilities}
+\begin{tabularx}{\linewidth}{|l|L{3.3cm}|X|}
+\hline\headrow\thead{Layer} & \thead{Spring stereotype} & \thead{Responsibility}\\\hline
+View & Thymeleaf templates & Render HTML from the model; Bootstrap layout; JavaScript Fetch calls for seat lookup and roster.\\\hline
+Controller (web) & \texttt{@Controller} & Handle form posts, run Bean Validation (\texttt{@Valid}), add model attributes, redirect with flash messages.\\\hline
+Controller (API) & \texttt{@RestController} & Expose JSON endpoints under \texttt{/api}; return proper HTTP status codes.\\\hline
+Error handling & \texttt{@ControllerAdvice}, \texttt{@RestControllerAdvice} & Convert exceptions into an error page (web) or an \texttt{ErrorResponse} JSON (API).\\\hline
+Service & \texttt{@Service}, \texttt{@Transactional} & Business rules, allocation engines, PDF creation, account creation.\\\hline
+Repository & \texttt{JpaRepository} interfaces & Derived queries and JPQL with \texttt{join fetch}; bulk deletes.\\\hline
+Model & \texttt{@Entity}, Java records & JPA entities mapped to tables; immutable DTO records for API responses.\\\hline
+Security & \texttt{SecurityFilterChain} beans & Authentication (form login, HTTP Basic), role-based authorization, sessions, CSRF.\\\hline
+\end{tabularx}
+
+\subsection{Why Two Security Filter Chains}
+Browser users need a login form, a session cookie and CSRF protection. API clients such as Postman and curl cannot easily handle a login form, so the \texttt{/api/**} chain uses HTTP Basic authentication and disables CSRF. The chains are ordered: \texttt{@Order(1)} for the API matcher and \texttt{@Order(2)} for everything else.
+
+\section{Package Structure}
+\begin{lstlisting}[style=plain]
+com.examgrid
+ |-- ExamGridApplication.java          (Spring Boot entry point)
+ |-- config/       DataSeeder          (sample data on first start)
+ |-- controller/
+ |    |-- api/     StudentApiController, FacultyApiController, HallApiController,
+ |    |            ExamApiController, AllocationApiController,
+ |    |            SeatLookupApiController, DutyApiController
+ |    `-- web/     HomeController, AdminDashboardController, StudentWebController,
+ |                 FacultyWebController, HallWebController, ExamWebController,
+ |                 AllocationWebController, ReportController, PortalController
+ |-- dto/          SeatInfo, DutyInfo, SeatingResult, InvigilationResult,
+ |                 ExamSlot, HallLayout, ErrorResponse      (Java records)
+ |-- entity/       Student, Faculty, Hall, Exam, SeatAllocation,
+ |                 InvigilationDuty, AppUser, Role
+ |-- exception/    ResourceNotFoundException, DuplicateResourceException,
+ |                 InsufficientCapacityException, AllocationException,
+ |                 InvalidRequestException, ApiExceptionHandler, WebExceptionHandler
+ |-- repository/   7 Spring Data JPA repositories
+ |-- security/     SecurityConfig, AppUserDetailsService
+ `-- service/      SeatingAllocationService, InvigilationAllocationService,
+                   StudentService, FacultyService, HallService, ExamService,
+                   UserAccountService, ReportPdfService
+\end{lstlisting}
+
+\section{Class Design}
+\subsection{Domain Classes}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[font=\scriptsize,
+  cls/.style={rectangle split,rectangle split parts=3,draw=egnavy,thick,rectangle split part fill={eglight,white,white},text width=4.1cm,align=left,inner sep=3pt},
+  as/.style={thick,egnavy}]
+\node[cls] (st) at (0,0) {\centering\textbf{Student}\nodepart{two}-id: Long\\-usn: String\\-name: String\\-branch: String\\-semester: int\\-email: String\nodepart{three}+getters / setters};
+\node[cls] (ex) at (0,-4.6) {\centering\textbf{Exam}\nodepart{two}-id: Long\\-subjectCode, subjectName\\-branch: String; semester: int\\-examDate: LocalDate\\-startTime, endTime: LocalTime\nodepart{three}+getters / setters};
+\node[cls] (sa) at (5.4,-2.3) {\centering\textbf{SeatAllocation}\nodepart{two}-id: Long\\-exam: Exam\\-student: Student\\-hall: Hall\\-examDate, startTime\\-rowNumber, columnNumber: int\\-seatNumber: String\nodepart{three}+SeatAllocation(exam, student, hall, row, col)};
+\node[cls] (ha) at (10.8,-0.4) {\centering\textbf{Hall}\nodepart{two}-id: Long\\-hallName, block: String\\-numberOfRows: int\\-numberOfColumns: int\nodepart{three}+getCapacity(): int};
+\node[cls] (du) at (10.8,-4.9) {\centering\textbf{InvigilationDuty}\nodepart{two}-id: Long\\-faculty: Faculty\\-hall: Hall\\-examDate: LocalDate\\-startTime, endTime\nodepart{three}+overlaps(date, from, to): boolean};
+\node[cls] (fa) at (5.4,-7.0) {\centering\textbf{Faculty}\nodepart{two}-id: Long\\-facultyCode, name\\-department, email\\-maxDuties: int = 6\nodepart{three}+getters / setters};
+\node[cls] (us) at (0,-8.6) {\centering\textbf{AppUser}\nodepart{two}-id: Long\\-username, password\\-role: Role\\-enabled: boolean\nodepart{three}+getters / setters};
+\draw[as] (st.east) -- node[above,pos=0.15]{1} node[above,pos=0.85]{*} (sa.north west);
+\draw[as] (ex.east) -- node[below,pos=0.15]{1} node[below,pos=0.85]{*} (sa.south west);
+\draw[as] (ha.west) -- node[above,pos=0.15]{1} node[above,pos=0.85]{*} (sa.east);
+\draw[as] (ha.south) -- node[right,pos=0.15]{1} node[right,pos=0.85]{*} (du.north);
+\draw[as] (fa.east) -- node[below,pos=0.15]{1} node[below,pos=0.85]{*} (du.west);
+\end{tikzpicture}
+\caption{Class diagram of JPA entities}\label{fig:class}
+\end{figure}
+
+\subsection{Service Classes}
+\begin{tabularx}{\linewidth}{|L{4.4cm}|X|}
+\hline\headrow\thead{Service} & \thead{Public operations}\\\hline
+SeatingAllocationService & \texttt{allocateSeats(date, startTime)}, \texttt{findSeatsByUsn(usn)}, \texttt{findSlotSeats(date, time)}, \texttt{buildHallLayouts(date, time)}\\\hline
+InvigilationAllocationService & \texttt{allocateInvigilators(date, startTime)}, \texttt{findAllDuties()}, \texttt{findDutiesByDate(date)}, \texttt{findDutiesOfFaculty(code)}, \texttt{workloadSummary()}\\\hline
+StudentService / FacultyService & \texttt{findAll}, \texttt{findById}, \texttt{create}, \texttt{update}, \texttt{delete}; create also makes a login account\\\hline
+HallService & CRUD plus \texttt{totalCapacity()}\\\hline
+ExamService & CRUD, \texttt{findTimingProblem(exam)}, \texttt{findSlots()}\\\hline
+UserAccountService & \texttt{createDefaultAccount}, \texttt{deleteAccount}; BCrypt encoding\\\hline
+ReportPdfService & \texttt{seatingChart(date, time)}, \texttt{dutyRoster(date)} returning \texttt{byte[]}\\\hline
+\end{tabularx}
+
+All services receive their dependencies through constructor injection, which makes them easy to test and avoids field injection.
+
+\section{Database Design}
+\subsection{Entity-Relationship Diagram}
+\begin{figure}[H]\centering
+\resizebox{\linewidth}{!}{\input{figures/er}}
+\caption{ER diagram of \texttt{examgrid\_db}}\label{fig:er}
+\end{figure}
+
+\subsection{Relationships}
+\begin{tabularx}{\linewidth}{|l|l|X|}
+\hline\headrow\thead{Relationship} & \thead{Cardinality} & \thead{Meaning}\\\hline
+Student -- SeatAllocation & 1 : N & A student gets one seat per exam he or she writes.\\\hline
+Exam -- SeatAllocation & 1 : N & An exam has one seat row per student writing it.\\\hline
+Hall -- SeatAllocation & 1 : N & A hall holds many seats in many slots.\\\hline
+Faculty -- InvigilationDuty & 1 : N & A faculty member has many duties over the exam period.\\\hline
+Hall -- InvigilationDuty & 1 : N & A hall needs one or more invigilators per slot.\\\hline
+AppUser -- Student / Faculty & 1 : 1 (logical) & Linked by \texttt{username = usn} or \texttt{username = faculty\_code}; kept separate so that credentials are not mixed with academic data.\\\hline
+\end{tabularx}
+
+SeatAllocation is an \emph{associative entity} that resolves the many-to-many relationship between Student, Exam and Hall and adds the seat position attributes.
+
+\subsection{Data Dictionary}
+\newcommand{\ddtable}[2]{%
+\begin{table}[H]\centering\small
+\caption{Table \texttt{#1}}
+\begin{tabularx}{\linewidth}{|l|l|l|X|}
+\hline\headrow\thead{Column} & \thead{Type} & \thead{Constraint} & \thead{Description}\\\hline
+#2
+\end{tabularx}\end{table}}
+
+\ddtable{students}{
+id & BIGINT & PK, auto increment & Surrogate key\\\hline
+usn & VARCHAR(15) & NOT NULL, UNIQUE & University Seat Number, stored upper case\\\hline
+name & VARCHAR(80) & NOT NULL & Full name\\\hline
+branch & VARCHAR(10) & NOT NULL & CSE, ISE, ECE, EEE, ME, CV, AIML\\\hline
+semester & INT & 1--8 (Bean Validation) & Current semester\\\hline
+email & VARCHAR(100) & valid e-mail & Institute e-mail\\\hline}
+
+\ddtable{faculty}{
+id & BIGINT & PK & Surrogate key\\\hline
+faculty\_code & VARCHAR(15) & NOT NULL, UNIQUE & Staff code, also the login name\\\hline
+name & VARCHAR(80) & NOT NULL & Full name with title\\\hline
+department & VARCHAR(10) & NOT NULL & Department code\\\hline
+email & VARCHAR(100) & valid e-mail & Institute e-mail\\\hline
+max\_duties & INT & 1--20, default 6 & Upper limit of invigilation duties\\\hline}
+
+\ddtable{halls}{
+id & BIGINT & PK & Surrogate key\\\hline
+hall\_name & VARCHAR(30) & NOT NULL, UNIQUE & e.g. LH-101\\\hline
+block & VARCHAR(30) & NOT NULL & Building / block name\\\hline
+total\_rows & INT & 1--30 & Rows of benches from the blackboard backwards\\\hline
+total\_columns & INT & 1--20 & Seats in one row\\\hline}
+
+\ddtable{exams}{
+id & BIGINT & PK & Surrogate key\\\hline
+subject\_code & VARCHAR(15) & NOT NULL & e.g. CS3603\\\hline
+subject\_name & VARCHAR(100) & NOT NULL & Subject title\\\hline
+branch, semester & VARCHAR(10), INT & NOT NULL & Class that writes the exam\\\hline
+exam\_date & DATE & NOT NULL & Exam day\\\hline
+start\_time, end\_time & TIME & NOT NULL, end $>$ start & Exam timing; exams with same date and start form a slot\\\hline}
+
+\ddtable{seat\_allocations}{
+id & BIGINT & PK & Surrogate key\\\hline
+exam\_id & BIGINT & FK $\rightarrow$ exams & Exam being written\\\hline
+student\_id & BIGINT & FK $\rightarrow$ students & Seated student\\\hline
+hall\_id & BIGINT & FK $\rightarrow$ halls & Allotted hall\\\hline
+exam\_date, start\_time & DATE, TIME & NOT NULL & Copied from exam to identify the slot quickly\\\hline
+seat\_row, seat\_column & INT & NOT NULL & 1-based position (row 1 is nearest the blackboard)\\\hline
+seat\_number & VARCHAR(20) & NOT NULL & Printable label, e.g. SH-01-C4\\\hline
+\multicolumn{4}{|l|}{UNIQUE (exam\_id, student\_id); UNIQUE (hall\_id, exam\_date, start\_time, seat\_row, seat\_column)}\\\hline}
+
+\ddtable{invigilation\_duties}{
+id & BIGINT & PK & Surrogate key\\\hline
+faculty\_id & BIGINT & FK $\rightarrow$ faculty & Invigilator\\\hline
+hall\_id & BIGINT & FK $\rightarrow$ halls & Hall supervised\\\hline
+exam\_date & DATE & NOT NULL & Duty date\\\hline
+start\_time, end\_time & TIME & NOT NULL & Duty window\\\hline}
+
+\ddtable{app\_users}{
+id & BIGINT & PK & Surrogate key\\\hline
+username & VARCHAR(30) & NOT NULL, UNIQUE & ADMIN, USN or faculty code\\\hline
+password & VARCHAR(255) & NOT NULL & BCrypt hash (60 chars)\\\hline
+role & VARCHAR(10) & ENUM as string & ADMIN, FACULTY or STUDENT\\\hline
+enabled & BIT & default 1 & Account active flag\\\hline}
+
+\subsection{Normalization}
+\begin{itemize}
+  \item \textbf{1NF}: every column holds a single atomic value; there are no repeating groups (seat position is two integer columns, not a list).
+  \item \textbf{2NF}: every table has a single-column surrogate key, so no partial dependency is possible.
+  \item \textbf{3NF}: non-key columns depend only on the key. Hall capacity is \emph{not stored} because it is derived from rows $\times$ columns.
+  \item \textbf{Controlled denormalization}: \texttt{exam\_date} and \texttt{start\_time} are copied into \texttt{seat\_allocations} so that the unique constraint ``one student per physical seat per slot'' can be enforced directly by MySQL and slot queries need no join. The copy is written only by the allocation engine, so it cannot drift.
+\end{itemize}
+
+\subsection{Indexes}
+MySQL automatically creates indexes for primary keys, unique constraints and foreign keys. The two most frequent queries -- seat lookup by USN and loading one slot -- use the \texttt{students.usn} unique index and the composite unique index on \texttt{(hall\_id, exam\_date, start\_time, \ldots)} respectively.
+
+\subsection{DDL}
+The complete script is in \texttt{docs/schema.sql}. Hibernate generates the same tables automatically with \texttt{spring.jpa.hibernate.ddl-auto=update}.
+\begin{lstlisting}[style=sql]
+CREATE TABLE seat_allocations (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    exam_id      BIGINT      NOT NULL,
+    student_id   BIGINT      NOT NULL,
+    hall_id      BIGINT      NOT NULL,
+    exam_date    DATE        NOT NULL,
+    start_time   TIME        NOT NULL,
+    seat_row     INT         NOT NULL,
+    seat_column  INT         NOT NULL,
+    seat_number  VARCHAR(20) NOT NULL,
+    CONSTRAINT uk_exam_student UNIQUE (exam_id, student_id),
+    CONSTRAINT uk_hall_seat UNIQUE (hall_id, exam_date, start_time, seat_row, seat_column),
+    CONSTRAINT fk_seat_exam    FOREIGN KEY (exam_id)    REFERENCES exams (id),
+    CONSTRAINT fk_seat_student FOREIGN KEY (student_id) REFERENCES students (id),
+    CONSTRAINT fk_seat_hall    FOREIGN KEY (hall_id)    REFERENCES halls (id)
+);
+\end{lstlisting}
+\begin{notebox}[Design decision]
+The column names \texttt{seat\_row} and \texttt{total\_rows} are used instead of \texttt{row\_number} and \texttt{rows} because \texttt{ROW\_NUMBER} and \texttt{ROWS} are reserved words in MySQL 8.
+\end{notebox}
+
+\subsection{JPA Mapping Choices}
+\begin{itemize}
+  \item All \texttt{@ManyToOne} associations use \texttt{FetchType.LAZY}; queries that need the related data use \texttt{join fetch} to avoid the N+1 select problem.
+  \item \texttt{spring.jpa.open-in-view=false} so that no lazy loading happens in Thymeleaf; services return fully loaded objects or DTO records.
+  \item Enums are stored with \texttt{EnumType.STRING} so that reordering the enum never corrupts data.
+  \item Java 17 \texttt{LocalDate} and \texttt{LocalTime} map to MySQL \texttt{DATE} and \texttt{TIME}.
+\end{itemize}
+
+\section{Dynamic Behaviour}
+\subsection{Seat Lookup by USN}
+\begin{figure}[H]\centering
+\resizebox{\linewidth}{!}{\input{figures/seq_lookup}}
+\caption{Sequence diagram -- public seat lookup through the REST API}
+\end{figure}
+
+\subsection{Seating Generation from the Admin Page}
+\begin{figure}[H]\centering
+\resizebox{\linewidth}{!}{\input{figures/seq_allocate}}
+\caption{Sequence diagram -- generating a seating plan (Post/Redirect/Get)}
+\end{figure}
+The web controller follows the \emph{Post/Redirect/Get} pattern: after the POST succeeds, the browser is redirected to the plan page, so refreshing the page never repeats the allocation.
+
+\section{User Interface Design}
+\subsection{Page Map}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[font=\scriptsize,
+  pg/.style={draw=egnavy,fill=eglight,rounded corners=2pt,minimum width=2.4cm,minimum height=0.6cm,align=center},
+  pub/.style={pg,fill=eggold!20,draw=eggold},
+  arr/.style={-{Stealth[length=1.8mm]},egnavy}]
+\node[pub] (home) at (0,0) {/ (Home)};
+\node[pub] (login) at (3.2,0) {/login};
+\node[pub] (look) at (-3.2,0) {/seat-lookup};
+\node[pg] (dash) at (3.2,-1.4) {/dashboard\\(role redirect)};
+\node[pg] (ad) at (0,-2.8) {/admin/dashboard};
+\node[pg] (fd) at (5,-2.8) {/faculty/duties};
+\node[pg] (sd) at (8,-2.8) {/student/seat};
+\foreach \n/\l/\x in {s/students/-4.8,f/faculty/-2.4,h/halls/0,e/exams/2.4,a/allocation/4.8}{
+  \node[pg] (\n) at (\x,-4.3) {/admin/\l};
+}
+\node[pg] (seat) at (3.6,-5.7) {/admin/seating};
+\node[pg] (duty) at (6.6,-5.7) {/admin/duties};
+\node[pg,fill=white] (pdf) at (5.1,-7.0) {/admin/reports/* (PDF)};
+\draw[arr] (home)--(login); \draw[arr] (home)--(look);
+\draw[arr] (login)--(dash); \draw[arr] (dash)--(ad); \draw[arr] (dash)--(fd); \draw[arr] (dash)--(sd);
+\foreach \n in {s,f,h,e,a} \draw[arr] (ad.south)--(\n.north);
+\draw[arr] (a)--(seat); \draw[arr] (a)--(duty); \draw[arr] (seat)--(pdf); \draw[arr] (duty)--(pdf);
+\end{tikzpicture}
+\caption{Navigation map (orange pages are public)}
+\end{figure}
+
+\subsection{Screen Descriptions}
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline\headrow\thead{Screen} & \thead{Content}\\\hline
+Home & Hero banner with Find My Seat and Login buttons; three cards explaining the roles.\\\hline
+Login & Username and password; messages for wrong password, logout and expired session.\\\hline
+Admin dashboard & Five counters (students, faculty, halls, seats, exams), upcoming slots, workload table.\\\hline
+Master data pages & Form on the left (add / edit with validation messages), searchable table on the right with Edit and Delete.\\\hline
+Allocation & One card per slot with buttons: 1. Generate seating, 2. Assign invigilators, View plan, Seating PDF.\\\hline
+Seating plan & Each hall as a CSS grid; blackboard bar at the top; one pastel colour per subject; empty seats dashed.\\\hline
+Duties & Roster table, date filter, PDF button, workload balance table.\\\hline
+Seat lookup / My seat & USN search box; result cards with seat number in large font, hall, block, row, bench and timing.\\\hline
+My duties & Faculty details and a table filled by a Fetch call to \texttt{/api/duties/faculty/\{code\}}.\\\hline
+\end{tabularx}
+
+\section{Security Design}
+\begin{tabularx}{\linewidth}{|L{3.4cm}|X|}
+\hline\headrow\thead{Concern} & \thead{Design}\\\hline
+Authentication & \texttt{AppUserDetailsService} loads \texttt{AppUser} by username (case-insensitive); form login for browsers, HTTP Basic for \texttt{/api/**}.\\\hline
+Password storage & \texttt{BCryptPasswordEncoder} (strength 10, random salt).\\\hline
+Authorization & URL rules: \texttt{/admin/**} ADMIN, \texttt{/faculty/**} FACULTY, \texttt{/student/**} STUDENT; API: GET \texttt{/api/seats/**} public, \texttt{/api/duties/faculty/**} ADMIN or FACULTY, all other \texttt{/api/**} ADMIN. Extra check in \texttt{DutyApiController} so that a faculty member can read only his or her own roster.\\\hline
+Session management & Session fixation protection (\texttt{migrateSession}), one session per user, 30 minute timeout, JSESSIONID deleted on logout.\\\hline
+CSRF & Enabled for all browser forms (Thymeleaf adds the token automatically); disabled only for the stateless-style API chain.\\\hline
+Output encoding & Thymeleaf \texttt{th:text} escapes HTML; JavaScript builds result cards with an \texttt{escapeHtml} helper or \texttt{textContent}.\\\hline
+SQL injection & Only JPA derived queries and parameterised JPQL are used; no string-built SQL.\\\hline
+\end{tabularx}
+
+\section{Deployment View}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[font=\small,
+  node3d/.style={draw=egnavy,fill=eglight,thick,minimum width=4.4cm,minimum height=2.4cm,align=center},
+  arr/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]},thick,egnavy}]
+\node[node3d,fill=white] (c) at (0,0) {\textbf{Client device}\\Browser / Postman};
+\node[node3d] (s) at (6,0) {\textbf{Application server}\\JDK 17, examgrid-1.0.0.jar\\Embedded Tomcat :8080};
+\node[node3d,fill=egnavy,text=white] (d) at (12,0) {\textbf{Database server}\\MySQL 8 :3306\\examgrid\_db};
+\draw[arr] (c)--node[above]{HTTP}(s);
+\draw[arr] (s)--node[above]{JDBC}(d);
+\end{tikzpicture}
+\caption{Deployment diagram (all three nodes may run on one laptop for the demo)}
+\end{figure}
+
+\section{Design Decisions Summary}
+\begin{tabularx}{\linewidth}{|l|X|X|}
+\hline\headrow\thead{No.} & \thead{Decision} & \thead{Reason}\\\hline
+D1 & Thymeleaf server-side rendering instead of a SPA framework & Course syllabus; simpler to explain; works without a separate frontend build.\\\hline
+D2 & Greedy rule-based allocation instead of backtracking / ILP solver & Runs in linear time, is easy to explain and gives zero conflicts whenever space allows (see Document 03).\\\hline
+D3 & DTO records for API responses & Avoids exposing lazy JPA proxies and passwords; stable JSON contract.\\\hline
+D4 & Bootstrap through WebJars & Pages work offline in the lab without a CDN.\\\hline
+D5 & H2 only in test scope & Tests run anywhere without MySQL; production stays on MySQL.\\\hline
+D6 & No Lombok & Plain getters and setters are clearer during a viva.\\\hline
+\end{tabularx}
+
+\end{document}

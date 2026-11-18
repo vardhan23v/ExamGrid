@@ -1,0 +1,332 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{examgrid}
+\setdoc{Project Proposal and SRS}{EG-DOC-01}
+
+\begin{document}
+\nmamitcover{Project Proposal and\\Software Requirements Specification}{Document 01 of 05 \,\textbullet\, Prepared according to IEEE Std 830-1998 / ISO/IEC/IEEE 29148:2018}{\small Under the guidance of\\[2pt]\textbf{Course Instructor, CS3603-1}\\Department of Computer Science and Engineering\\[6pt]November 2026}
+
+\pagenumbering{roman}
+\doccontrol{EG-DOC-01}{Approved baseline}
+\newpage
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+\part*{Part A -- Project Proposal}
+\addcontentsline{toc}{part}{Part A -- Project Proposal}
+
+\section{Background}
+Every semester the examination cell of an engineering college prepares seating plans and invigilation duty lists for internal and semester-end examinations. At NMAM Institute of Technology this work is still largely done by hand on spreadsheets. For a single session the cell has to decide, for hundreds of students, which hall and which bench each student sits on, and which faculty member supervises each hall. The process typically takes several hours per exam day and is repeated whenever the timetable changes.
+
+Manual planning leads to recurring problems:
+\begin{itemize}
+  \item Students writing the same subject are placed next to each other, which makes copying easy.
+  \item Halls are over-filled or seats are left unused because capacity is not tracked consistently.
+  \item A faculty member is given two duties that overlap in time, or a few faculty get many more duties than others.
+  \item Students crowd notice boards before the exam to find their hall and seat.
+  \item Printed charts and duty lists are re-typed for every change.
+\end{itemize}
+
+\section{Problem Statement}
+\begin{notebox}[Problem Statement]
+Design and implement a web application that automatically generates a conflict-free examination seating plan and a balanced, clash-free invigilation duty roster from the exam timetable, hall layouts, student list and faculty list, and that lets students and faculty look up their allocations online.
+\end{notebox}
+
+\section{Objectives}
+\begin{enumerate}
+  \item Maintain master data for students, faculty, examination halls (with row and column layout) and exams through a role-protected web interface.
+  \item Generate a seating plan for every exam slot that (a) never exceeds hall capacity, (b) avoids placing two students of the same subject next to each other (left/right or front/back), and (c) prefers different branches as neighbours.
+  \item Assign invigilators to every hall in use with zero time clashes and an even workload, respecting each faculty member's maximum duty limit.
+  \item Provide instant seat lookup by USN and an online duty roster for faculty through REST APIs consumed with the JavaScript Fetch API.
+  \item Export printable seating charts, attendance sheets and duty rosters as PDF.
+  \item Apply the full Spring stack taught in CS3603-1: Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA, Spring Security, Bean Validation and centralized exception handling.
+\end{enumerate}
+
+\section{Scope}
+\textbf{In scope:} exam-cell administration, rule-based seating allocation, rule-based invigilation allocation, PDF export, student seat lookup, faculty roster view, REST API, role-based login.\\
+\textbf{Out of scope:} question paper management, result processing, attendance marking during the exam, SMS/e-mail notification, integration with the university ERP. These are listed as future enhancements.
+
+\section{Proposed Methodology}
+The team follows an iterative, layered approach commonly used in industry projects:
+\begin{enumerate}
+  \item \textbf{Requirement analysis} -- convert the approved abstract into numbered functional and non-functional requirements (this document).
+  \item \textbf{Design} -- MVC architecture, MySQL schema and ER model, REST API contract (Document 02).
+  \item \textbf{Algorithm design} -- greedy rule-based seating and least-loaded-first invigilation allocation (Document 03).
+  \item \textbf{Implementation} -- Controller--Service--Repository layering in Spring Boot, Thymeleaf UI.
+  \item \textbf{Testing} -- JUnit 5 unit/integration tests, MockMvc API tests, Postman and curl (Document 04).
+  \item \textbf{Documentation and demo} -- final lab report (Document 05) and viva demonstration.
+\end{enumerate}
+
+\section{Technology Stack}
+\begin{tabularx}{\linewidth}{|L{2.8cm}|X|}
+\hline\headrow\thead{Layer} & \thead{Technologies and role}\\\hline
+Frontend & Thymeleaf templates, HTML5, CSS3, Bootstrap 5 (served as a WebJar), Vanilla JavaScript with Fetch API\\\hline
+Backend & Java 17, Spring Boot 3.3, Spring MVC, Spring Data JPA with Hibernate 6, Spring Security 6, Jakarta Bean Validation, \texttt{@RestController}, \texttt{@ControllerAdvice}, OpenPDF\\\hline
+Database & MySQL 8 (\texttt{examgrid\_db})\\\hline
+Build and test & Maven, JUnit 5, Spring MockMvc, H2 (tests only), Postman, curl, Git and GitHub\\\hline
+\end{tabularx}
+
+\section{Team and Responsibilities}
+\begin{tabularx}{\linewidth}{|l|l|X|}
+\hline\headrow\thead{Member} & \thead{USN} & \thead{Primary responsibility}\\\hline
+Prajwal Jogi & NNM25CS522 & Seating allocation engine, JPA entities and repositories\\\hline
+Prajwal Acharya & NNM25CS521 & Invigilation allocation engine, PDF export (OpenPDF)\\\hline
+Sathwik P Shetty & NNM24CS224 & Spring Security, REST APIs, exception handling, testing\\\hline
+Satvik Hegde & NNM24CS225 & Thymeleaf UI, Bootstrap pages, Fetch API scripts, documentation\\\hline
+\end{tabularx}
+
+\section{Project Schedule}
+\begin{center}
+\begin{ganttchart}[
+  hgrid, vgrid, x unit=0.42cm, y unit chart=0.55cm,
+  title/.style={fill=egnavy,draw=egnavy},
+  title label font=\scriptsize\color{white},
+  bar/.style={fill=eglight,draw=egnavy},
+  bar label font=\scriptsize,
+  milestone/.style={fill=eggold,draw=eggold},
+  milestone label font=\scriptsize\bfseries
+]{1}{28}
+\gantttitle{November 2026 (days 1--28)}{28}\\
+\gantttitlelist{1,...,4}{7}\\
+\ganttbar{Requirement analysis \& SRS}{1}{4}\\
+\ganttbar{System and database design}{4}{8}\\
+\ganttbar{Algorithm design}{6}{10}\\
+\ganttbar{Backend implementation}{8}{18}\\
+\ganttbar{Thymeleaf UI}{12}{20}\\
+\ganttbar{Testing (JUnit, Postman)}{16}{23}\\
+\ganttbar{Reports and documentation}{20}{26}\\
+\ganttmilestone{Final demo / viva}{27}
+\end{ganttchart}
+\end{center}
+
+\section{Expected Outcomes}
+\begin{itemize}
+  \item Seating plan for a slot of about 150 students generated in under a second instead of hours.
+  \item Zero same-subject neighbours whenever hall space allows, and zero invigilator time clashes.
+  \item Difference between the highest and lowest duty count across faculty of at most one.
+  \item Students find their seat by USN without visiting the notice board.
+\end{itemize}
+
+\newpage
+\part*{Part B -- Software Requirements Specification}
+\addcontentsline{toc}{part}{Part B -- Software Requirements Specification}
+
+\section{Introduction}
+\subsection{Purpose}
+This Software Requirements Specification (SRS) describes the functional and non-functional requirements of ExamGrid version 1.0. It is intended for the project team, the course instructor who evaluates the project, and any developer who maintains the system later.
+
+\subsection{Document Conventions}
+Functional requirements are numbered \texttt{REQ-F-nnn} and non-functional requirements \texttt{REQ-NF-nnn}. Priority is \emph{High} (must have for the demo), \emph{Medium} (should have) or \emph{Low} (nice to have). The words \emph{shall} and \emph{should} carry their IEEE meaning.
+
+\subsection{Intended Audience and Reading Suggestions}
+Instructors and evaluators should read Sections 1--3 and the requirement tables. Developers should also read Documents 02 and 03 for design details. Testers should use Section 5 together with Document 04.
+
+\subsection{Definitions, Acronyms and Abbreviations}
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline\headrow\thead{Term} & \thead{Meaning}\\\hline
+USN & University Seat Number, the unique student identifier (e.g. NNM24CS224)\\\hline
+Exam cell & The administrative unit that conducts examinations; mapped to role ADMIN\\\hline
+Slot & All exams that start on the same date at the same time; seating is planned per slot\\\hline
+Hall & An examination room with a grid of \emph{rows} (front to back) and \emph{columns} (seats per row)\\\hline
+Seat label & Row letter followed by column number, e.g. C4; full seat number is \texttt{HALL-C4}\\\hline
+Invigilator & Faculty member supervising a hall during a slot\\\hline
+Clash & Two duties of the same faculty member whose time ranges overlap on the same date\\\hline
+MVC & Model--View--Controller\\\hline
+JPA & Jakarta Persistence API\\\hline
+REST & Representational State Transfer\\\hline
+DTO & Data Transfer Object\\\hline
+CSRF & Cross-Site Request Forgery\\\hline
+\end{tabularx}
+
+\subsection{References}
+\begin{enumerate}
+  \item IEEE Std 830-1998, \emph{IEEE Recommended Practice for Software Requirements Specifications}.
+  \item ISO/IEC/IEEE 29148:2018, \emph{Systems and software engineering -- Life cycle processes -- Requirements engineering}.
+  \item ExamGrid Mini Project Abstract, CS3603-1, NMAMIT, 2026.
+  \item Spring Boot 3.3 Reference Documentation, \url{https://docs.spring.io/spring-boot/}.
+  \item Spring Security 6 Reference, \url{https://docs.spring.io/spring-security/reference/}.
+\end{enumerate}
+
+\section{Overall Description}
+\subsection{Product Perspective}
+ExamGrid is a new, self-contained web application. It runs as a single Spring Boot application (embedded Tomcat) connected to a MySQL database. Users access it through a web browser; other programs (Postman, curl, or a future mobile app) access it through the REST API under \texttt{/api}.
+
+\begin{figure}[H]\centering
+\resizebox{0.8\linewidth}{!}{\input{figures/architecture}}
+\caption{System context and layered architecture}
+\end{figure}
+
+\subsection{Product Functions}
+\begin{itemize}
+  \item Manage students, faculty, halls and exams (create, read, update, delete).
+  \item Group exams into slots and generate a seating plan per slot.
+  \item Assign invigilators to the halls used in a slot.
+  \item Display seating as colour-coded hall grids; export seating charts and attendance sheets as PDF.
+  \item Display and export the invigilation duty roster and workload summary.
+  \item Public seat lookup by USN; logged-in student view of own seats; logged-in faculty view of own duties.
+  \item REST API for all of the above.
+\end{itemize}
+
+\begin{figure}[H]\centering
+\resizebox{0.95\linewidth}{!}{\input{figures/usecase}}
+\caption{Use case diagram}
+\end{figure}
+
+\subsection{User Classes and Characteristics}
+\begin{tabularx}{\linewidth}{|l|l|X|}
+\hline\headrow\thead{User class} & \thead{Role} & \thead{Characteristics and permissions}\\\hline
+Exam cell staff & ADMIN & Few users, comfortable with computers. Full access to master data, allocation, reports and the REST API.\\\hline
+Faculty & FACULTY & About 10--200 users. Log in with faculty code; view only their own duty roster.\\\hline
+Students & STUDENT & Hundreds of users, mostly on mobile phones. Log in with USN to see own seats; can also use public lookup.\\\hline
+Guest / API client & -- & Anyone can call the public seat lookup. Other API calls need ADMIN (or FACULTY for own roster) via HTTP Basic.\\\hline
+\end{tabularx}
+
+\subsection{Operating Environment}
+\begin{itemize}
+  \item Server: any OS with JDK 17+ (tested design target: Windows 11 and Ubuntu 22.04), MySQL 8.0, minimum 2 GB RAM.
+  \item Client: current versions of Chrome, Edge or Firefox on desktop or mobile.
+  \item Network: college LAN or localhost for the demonstration; default port 8080.
+\end{itemize}
+
+\subsection{Design and Implementation Constraints}
+\begin{itemize}
+  \item Technology stack is fixed by the course: Spring Boot, Spring MVC, Thymeleaf, Spring Data JPA, MySQL, Maven.
+  \item Strict Controller--Service--Repository layering; controllers do not call repositories directly.
+  \item Code must stay at B.Tech level and be explainable in a lab viva (no message queues, caches or containers).
+  \item Seating and invigilation rules live in \texttt{Seating\-Allocation\-Service} and \texttt{Invigilation\-Allocation\-Service}.
+\end{itemize}
+
+\subsection{Assumptions and Dependencies}
+\begin{itemize}
+  \item All students of a branch and semester write the exam scheduled for that branch and semester.
+  \item One student never has two exams in the same slot (enforced when exams are scheduled).
+  \item One invigilator is required for every 30 students in a hall (configurable).
+  \item An exam slot's duty window runs from the common start time to the latest end time of its exams.
+\end{itemize}
+
+\section{External Interface Requirements}
+\subsection{User Interfaces}
+\begin{itemize}
+  \item Responsive Bootstrap 5 pages with a common navigation bar that shows only the links allowed for the logged-in role.
+  \item Forms show field-level validation messages next to each input.
+  \item Seating plan shows each hall as a grid with the blackboard at the top and one colour per subject.
+  \item Success and error messages appear as dismissible alerts; errors from the allocation engine appear on a dedicated error page with a back link.
+\end{itemize}
+\subsection{Hardware Interfaces}
+No special hardware. Printing of PDF charts uses any printer configured on the client machine.
+\subsection{Software Interfaces}
+\begin{itemize}
+  \item MySQL 8 through MySQL Connector/J and Hibernate.
+  \item OpenPDF library to create PDF files in memory.
+\end{itemize}
+\subsection{Communication Interfaces}
+HTTP/1.1 on port 8080. Browser pages use HTML form posts protected by CSRF tokens. REST endpoints exchange JSON (\texttt{application/json}); PDF endpoints return \texttt{application/pdf}.
+
+\section{Functional Requirements}
+\subsection{Authentication and Authorization}
+\begin{longtable}{|p{1.9cm}|p{9.3cm}|p{1.5cm}|}
+\hline\headrow\thead{ID} & \thead{Requirement} & \thead{Priority}\\\hline\endhead
+REQ-F-001 & The system shall provide a login page where users enter username and password. & High\\\hline
+REQ-F-002 & The system shall support three roles: ADMIN (exam cell), FACULTY and STUDENT, and redirect each role to its own home page after login. & High\\\hline
+REQ-F-003 & Passwords shall be stored only as BCrypt hashes. & High\\\hline
+REQ-F-004 & The system shall restrict \texttt{/admin/**} to ADMIN, \texttt{/faculty/**} to FACULTY and \texttt{/student/**} to STUDENT, and show an access-denied page otherwise. & High\\\hline
+REQ-F-005 & The system shall create a login account automatically when a student (username = USN) or faculty (username = faculty code) is added. & Medium\\\hline
+REQ-F-006 & The system shall allow at most one active session per user and expire the older session on a new login. & Medium\\\hline
+\end{longtable}
+
+\subsection{Master Data Management}
+\begin{longtable}{|p{1.9cm}|p{9.3cm}|p{1.5cm}|}
+\hline\headrow\thead{ID} & \thead{Requirement} & \thead{Priority}\\\hline\endhead
+REQ-F-010 & ADMIN shall add, edit, list and delete students (USN, name, branch, semester, e-mail). USN must be unique. & High\\\hline
+REQ-F-011 & ADMIN shall add, edit, list and delete faculty (code, name, department, e-mail, maximum duties). Code must be unique. & High\\\hline
+REQ-F-012 & ADMIN shall add, edit, list and delete halls (name, block, rows, columns); capacity = rows $\times$ columns. & High\\\hline
+REQ-F-013 & ADMIN shall schedule exams (subject code, subject name, branch, semester, date, start time, end time). & High\\\hline
+REQ-F-014 & The system shall reject an exam whose end time is not after its start time. & High\\\hline
+REQ-F-015 & The system shall reject an exam that overlaps another exam of the same branch and semester. & High\\\hline
+REQ-F-016 & Deleting a student, hall, exam or faculty shall also delete the dependent seat allocations or duties. & Medium\\\hline
+\end{longtable}
+
+\subsection{Seating Allocation}
+\begin{longtable}{|p{1.9cm}|p{9.3cm}|p{1.5cm}|}
+\hline\headrow\thead{ID} & \thead{Requirement} & \thead{Priority}\\\hline\endhead
+REQ-F-020 & The system shall list exam slots (date + start time) with the exams in each slot. & High\\\hline
+REQ-F-021 & On request, the system shall generate a seating plan for one slot, seating every student of every exam in the slot exactly once. & High\\\hline
+REQ-F-022 & The number of students placed in a hall shall never exceed its capacity. & High\\\hline
+REQ-F-023 & If total students exceed total capacity, the system shall stop and report the shortfall without changing existing data. & High\\\hline
+REQ-F-024 & Two students writing the same subject shall not be placed next to each other horizontally or vertically when free seats allow it; the system shall report how many such pairs were unavoidable. & High\\\hline
+REQ-F-025 & The system should prefer neighbours from a different branch. & Medium\\\hline
+REQ-F-026 & Re-generating a slot shall replace the previous plan and invalidate its duties. & High\\\hline
+REQ-F-027 & ADMIN shall view the plan as colour-coded hall grids. & High\\\hline
+\end{longtable}
+
+\subsection{Invigilation Allocation}
+\begin{longtable}{|p{1.9cm}|p{9.3cm}|p{1.5cm}|}
+\hline\headrow\thead{ID} & \thead{Requirement} & \thead{Priority}\\\hline\endhead
+REQ-F-030 & The system shall assign invigilators only after seating exists for the slot. & High\\\hline
+REQ-F-031 & Each used hall shall get $\lceil s/30 \rceil$ invigilators (minimum one), where $s$ is the number of students in the hall. & High\\\hline
+REQ-F-032 & A faculty member shall never receive two duties that overlap in time on the same date. & High\\\hline
+REQ-F-033 & A faculty member shall not exceed his or her maximum duty count. & High\\\hline
+REQ-F-034 & The faculty with the fewest duties so far shall be chosen first, so that workloads stay balanced. & High\\\hline
+REQ-F-035 & If not enough faculty are free, the system shall report the problem and save no partial roster. & High\\\hline
+REQ-F-036 & ADMIN shall view the duty roster (all or by date) and the workload per faculty. & High\\\hline
+\end{longtable}
+
+\subsection{Lookup, Reports and API}
+\begin{longtable}{|p{1.9cm}|p{9.3cm}|p{1.5cm}|}
+\hline\headrow\thead{ID} & \thead{Requirement} & \thead{Priority}\\\hline\endhead
+REQ-F-040 & Anyone shall look up hall, seat, subject and timing by USN without logging in. & High\\\hline
+REQ-F-041 & A logged-in student shall see his or her own seats automatically. & Medium\\\hline
+REQ-F-042 & A logged-in faculty member shall see only his or her own duties. & High\\\hline
+REQ-F-043 & ADMIN shall download a PDF seating chart (grid per hall plus attendance sheet). & High\\\hline
+REQ-F-044 & ADMIN shall download a PDF invigilation duty roster (all or by date). & High\\\hline
+REQ-F-045 & All master data and allocation operations shall be available as REST endpoints returning JSON. & High\\\hline
+REQ-F-046 & API errors shall return a uniform JSON body with timestamp, status, error, message, path and field errors. & High\\\hline
+\end{longtable}
+
+\section{Non-Functional Requirements}
+\begin{longtable}{|p{2.1cm}|p{2.2cm}|p{8.4cm}|}
+\hline\headrow\thead{ID} & \thead{Category} & \thead{Requirement}\\\hline\endhead
+REQ-NF-001 & Performance & Seating for a slot of up to 1000 students and 30 halls shall be generated within 3 seconds on a standard laptop.\\\hline
+REQ-NF-002 & Performance & Seat lookup API shall respond within 500 ms for a database of 5000 students.\\\hline
+REQ-NF-003 & Security & All pages except home, login and seat lookup shall require authentication; role checks are enforced on the server.\\\hline
+REQ-NF-004 & Security & Browser forms shall be protected by CSRF tokens; session id shall change after login (session fixation protection).\\\hline
+REQ-NF-005 & Reliability & Allocation runs inside one database transaction; a failure leaves the previous data unchanged.\\\hline
+REQ-NF-006 & Usability & Pages shall be usable on a 360 px wide mobile screen.\\\hline
+REQ-NF-007 & Maintainability & Code follows Controller--Service--Repository layering with constructor injection and no business logic in controllers or templates.\\\hline
+REQ-NF-008 & Testability & Allocation engines shall be covered by automated JUnit tests.\\\hline
+REQ-NF-009 & Portability & The application shall run from a single Maven command on Windows or Linux with JDK 17+.\\\hline
+REQ-NF-010 & Data integrity & Unique and foreign key constraints in MySQL shall prevent duplicate seats and orphan records.\\\hline
+\end{longtable}
+
+\section{User Stories and Acceptance Criteria}
+\begin{tabularx}{\linewidth}{|l|X|X|}
+\hline\headrow\thead{ID} & \thead{User story} & \thead{Acceptance criteria}\\\hline
+US-01 & As exam cell staff I want to generate the seating plan for a slot so that I do not plan it by hand. & \emph{Given} exams, students and halls exist, \emph{when} I click Generate seating, \emph{then} every student gets one seat and I see the hall grids.\\\hline
+US-02 & As exam cell staff I want to be warned when halls are too small. & \emph{Given} 148 students and 36 seats, \emph{when} I generate seating, \emph{then} I see ``Insufficient hall capacity'' and no seats are saved.\\\hline
+US-03 & As a faculty member I want to see my duties so that I know where to report. & \emph{Given} I am logged in as FAC101, \emph{when} I open My Duties, \emph{then} only FAC101 duties are listed.\\\hline
+US-04 & As a student I want to find my seat with my USN. & \emph{Given} seating is generated, \emph{when} I enter NNM24CS224, \emph{then} I see hall, seat number, subject and time.\\\hline
+US-05 & As exam cell staff I want PDF charts to paste on hall doors. & \emph{When} I click Seating PDF, \emph{then} a PDF opens with one grid page and one attendance page per hall.\\\hline
+\end{tabularx}
+
+\section{Requirement Traceability Overview}
+\begin{tabularx}{\linewidth}{|l|X|X|}
+\hline\headrow\thead{Requirement group} & \thead{Implemented in} & \thead{Verified by (Document 04)}\\\hline
+REQ-F-001 -- 006 & SecurityConfig, AppUserDetailsService, UserAccountService & ApiControllerTest, TC-01 -- TC-06\\\hline
+REQ-F-010 -- 016 & Student/Faculty/Hall/ExamService and web/API controllers & TC-10 -- TC-18\\\hline
+REQ-F-020 -- 027 & SeatingAllocationService & SeatingAllocationServiceTest, TC-20 -- TC-27\\\hline
+REQ-F-030 -- 036 & InvigilationAllocationService & InvigilationAllocationServiceTest, TC-30 -- TC-36\\\hline
+REQ-F-040 -- 046 & SeatLookup/Duty API controllers, ReportPdfService, ApiExceptionHandler & ApiControllerTest, TC-40 -- TC-46\\\hline
+\end{tabularx}
+
+\section{Appendix: Sample Data Used for Demonstration}
+The application loads the following data on first start (can be disabled with \url{examgrid.seed-sample-data=false}).
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline\headrow\thead{Entity} & \thead{Sample}\\\hline
+Halls & LH-101 (6$\times$6), LH-102 (6$\times$6), LH-201 (7$\times$8), SH-01 (8$\times$8); total 192 seats\\\hline
+Students & 148: CSE-5 (48, including the four team members), ECE-5 (36), ME-5 (24), CSE-3 (40)\\\hline
+Faculty & 10 (FAC101 -- FAC110), maximum 6 duties each\\\hline
+Exams & 07-Dec-2026 09:30 (4 exams), 08-Dec-2026 09:30 (3 exams), 08-Dec-2026 14:00 (1 exam)\\\hline
+Accounts & admin / admin123; faculty and students use their code or USN with password Welcome@123\\\hline
+\end{tabularx}
+
+\end{document}

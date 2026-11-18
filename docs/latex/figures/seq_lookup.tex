@@ -1,0 +1,22 @@
+\begin{tikzpicture}[font=\scriptsize,
+  head/.style={draw=egnavy,fill=eglight,rounded corners=2pt,minimum width=2.1cm,minimum height=0.65cm,align=center,font=\scriptsize\bfseries},
+  msg/.style={-{Stealth[length=2mm]},thick},
+  ret/.style={-{Stealth[length=2mm]},dashed}]
+\foreach \x/\n/\t in {0/b/Browser\\(seat-lookup.js),3.1/f/Security\\Filter,6.2/c/SeatLookup\\ApiController,9.3/s/SeatingAllocation\\Service,12.4/r/SeatAllocation\\Repository,15.2/d/MySQL}{
+  \node[head] (\n) at (\x,0) {\t};
+  \draw[eggrey,dashed] (\n.south) -- ++(0,-7.1);
+}
+\draw[msg] (0,-1.0) -- node[above]{GET /api/seats/NNM24CS224} (3.1,-1.0);
+\draw[msg] (3.1,-1.5) -- node[above]{permitAll} (6.2,-1.5);
+\draw[msg] (6.2,-2.0) -- node[above]{findSeatsByUsn(usn)} (9.3,-2.0);
+\draw[msg] (9.3,-2.5) -- node[above]{existsByUsnIgnoreCase} (12.4,-2.5);
+\draw[msg] (12.4,-2.9) -- node[above]{SELECT} (15.2,-2.9);
+\draw[msg] (9.3,-3.5) -- node[above]{findByUsn (join fetch)} (12.4,-3.5);
+\draw[msg] (12.4,-3.9) -- node[above]{SELECT ... JOIN} (15.2,-3.9);
+\draw[ret] (15.2,-4.4) -- node[above]{rows} (12.4,-4.4);
+\draw[ret] (12.4,-4.8) -- node[above]{List$<$SeatAllocation$>$} (9.3,-4.8);
+\draw[ret] (9.3,-5.3) -- node[above]{List$<$SeatInfo$>$ (DTO)} (6.2,-5.3);
+\draw[ret] (6.2,-5.8) -- node[above]{200 OK, JSON array} (0,-5.8);
+\draw[msg] (0,-6.3) -- ++(0.6,0) -- ++(0,-0.35) node[right]{render seat cards (DOM)} -- ++(-0.6,0);
+\node[draw=red!60!black,fill=red!6,font=\tiny,align=left,text width=3.1cm] at (8.0,-6.75) {alt: unknown USN $\rightarrow$ ResourceNotFound\-Exception $\rightarrow$ ApiExceptionHandler $\rightarrow$ 404 JSON};
+\end{tikzpicture}

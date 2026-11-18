@@ -1,0 +1,36 @@
+\begin{tikzpicture}[
+  font=\scriptsize,
+  ent/.style={rectangle split,rectangle split parts=2,draw=egnavy,thick,rounded corners=2pt,
+              rectangle split part fill={egnavy,white},text width=3.25cm,align=left,inner sep=3pt},
+  rel/.style={diamond,draw=eggold,fill=eggold!20,thick,aspect=2.2,inner sep=1pt,font=\scriptsize\itshape},
+  ln/.style={thick,egnavy!80}]
+
+\node[ent] (student) at (0,0) {\textcolor{white}{\textbf{STUDENTS}}\nodepart{two}
+  \underline{id} BIGINT PK\\ usn VARCHAR(15) UK\\ name VARCHAR(80)\\ branch VARCHAR(10)\\ semester INT\\ email VARCHAR(100)};
+\node[ent] (exam) at (0,-6.2) {\textcolor{white}{\textbf{EXAMS}}\nodepart{two}
+  \underline{id} BIGINT PK\\ subject\_code VARCHAR(15)\\ subject\_name VARCHAR(100)\\ branch VARCHAR(10)\\ semester INT\\ exam\_date DATE\\ start\_time TIME\\ end\_time TIME};
+\node[ent] (seat) at (6,-3.1) {\textcolor{white}{\textbf{SEAT\_ALLOCATIONS}}\nodepart{two}
+  \underline{id} BIGINT PK\\ exam\_id FK\\ student\_id FK\\ hall\_id FK\\ exam\_date DATE\\ start\_time TIME\\ seat\_row INT\\ seat\_column INT\\ seat\_number VARCHAR(20)};
+\node[ent] (hall) at (12,-3.1) {\textcolor{white}{\textbf{HALLS}}\nodepart{two}
+  \underline{id} BIGINT PK\\ hall\_name VARCHAR(30) UK\\ block VARCHAR(30)\\ total\_rows INT\\ total\_columns INT};
+\node[ent] (duty) at (12,-8.4) {\textcolor{white}{\textbf{INVIGILATION\_DUTIES}}\nodepart{two}
+  \underline{id} BIGINT PK\\ faculty\_id FK\\ hall\_id FK\\ exam\_date DATE\\ start\_time TIME\\ end\_time TIME};
+\node[ent] (faculty) at (5.5,-9.6) {\textcolor{white}{\textbf{FACULTY}}\nodepart{two}
+  \underline{id} BIGINT PK\\ faculty\_code VARCHAR(15) UK\\ name VARCHAR(80)\\ department VARCHAR(10)\\ email VARCHAR(100)\\ max\_duties INT};
+\node[ent] (user) at (12,1.2) {\textcolor{white}{\textbf{APP\_USERS}}\nodepart{two}
+  \underline{id} BIGINT PK\\ username VARCHAR(30) UK\\ password VARCHAR(255)\\ role ENUM\\ enabled BIT};
+
+\node[rel] (r1) at (3.4,-0.6) {allotted};
+\node[rel] (r2) at (3.4,-6.0) {seats};
+\node[rel] (r3) at (9.2,-2.0) {in};
+\node[rel] (r4) at (12,-5.9) {covers};
+\node[rel] (r5) at (9.0,-9.3) {performs};
+
+\draw[ln] (student.east) -- node[above,pos=0.2]{1} (r1) -- node[above,pos=0.8]{N} (seat.north west);
+\draw[ln] (exam.east) -- node[above,pos=0.2]{1} (r2) -- node[above,pos=0.8]{N} (seat.south west);
+\draw[ln] (hall.west) -- node[above,pos=0.2]{1} (r3) -- node[above,pos=0.8]{N} (seat.east);
+\draw[ln] (hall.south) -- node[right,pos=0.2]{1} (r4) -- node[right,pos=0.8]{N} (duty.north);
+\draw[ln] (faculty.east) -- node[above,pos=0.2]{1} (r5) -- node[above,pos=0.8]{N} (duty.west);
+\draw[ln,dashed,eggrey] (user.west) -- node[above,font=\tiny,align=center]{username = usn}  (student.north east);
+\node[font=\tiny,eggrey,align=center,below=1pt of user] {login account: username = USN (student)\\or faculty\_code (faculty) or ADMIN};
+\end{tikzpicture}

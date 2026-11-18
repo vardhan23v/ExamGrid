@@ -1,0 +1,38 @@
+\begin{tikzpicture}[
+  font=\small,
+  layer/.style={draw=egnavy,fill=eglight,rounded corners=3pt,minimum width=9.6cm,minimum height=1.05cm,align=center},
+  comp/.style={draw=egnavy,fill=white,rounded corners=2pt,minimum height=0.7cm,align=center,font=\footnotesize},
+  side/.style={draw=eggold,fill=eggold!15,rounded corners=3pt,minimum width=3.0cm,minimum height=1.05cm,align=center,font=\footnotesize},
+  arr/.style={-{Stealth[length=2.5mm]},thick,egnavy}]
+
+\node[layer,fill=white] (client) {\textbf{Client Tier} -- Web browser (Admin / Faculty / Student), Postman, curl};
+\node[layer,below=0.55cm of client,fill=eggold!20,draw=eggold] (sec) {\textbf{Spring Security Filter Chains}\\[-1pt]\footnotesize API chain (/api/**, HTTP Basic) \quad Web chain (form login, session)};
+\node[layer,below=0.55cm of sec,minimum height=1.6cm] (ctl) {};
+\node[anchor=north] at (ctl.north) {\textbf{Controller Layer}};
+\node[comp,anchor=south west] at ([xshift=0.25cm,yshift=0.15cm]ctl.south west) {Web Controllers\\(@Controller)};
+\node[comp,anchor=south] at ([yshift=0.15cm]ctl.south) {REST Controllers\\(@RestController)};
+\node[comp,anchor=south east] at ([xshift=-0.25cm,yshift=0.15cm]ctl.south east) {@ControllerAdvice\\handlers};
+\node[layer,below=0.55cm of ctl,minimum height=1.6cm] (svc) {};
+\node[anchor=north] at (svc.north) {\textbf{Service Layer} (@Service, @Transactional)};
+\node[comp,anchor=south west] at ([xshift=0.2cm,yshift=0.15cm]svc.south west) {SeatingAllocation\\Service};
+\node[comp,anchor=south] at ([xshift=-0.15cm,yshift=0.15cm]svc.south) {InvigilationAllocation\\Service};
+\node[comp,anchor=south east] at ([xshift=-0.2cm,yshift=0.15cm]svc.south east) {CRUD + ReportPdf\\Services};
+\node[layer,below=0.55cm of svc] (repo) {\textbf{Repository Layer} -- Spring Data JPA interfaces (JpaRepository)};
+\node[layer,below=0.55cm of repo] (orm) {\textbf{Persistence} -- Hibernate ORM \,+\, JDBC (MySQL Connector/J)};
+\node[layer,below=0.55cm of orm,fill=egnavy,text=white] (db) {\textbf{MySQL 8} -- examgrid\_db};
+
+\node[side,right=0.6cm of ctl] (view) {\textbf{View}\\Thymeleaf templates\\Bootstrap 5, JS Fetch};
+\node[side,right=0.6cm of svc] (pdf) {\textbf{OpenPDF}\\Seating charts\\Duty rosters};
+\node[side,right=0.6cm of repo] (ent) {\textbf{Model}\\JPA Entities\\DTO records};
+
+\draw[arr] (client) -- node[right,font=\scriptsize]{HTTP request} (sec);
+\draw[arr] (sec) -- (ctl);
+\draw[arr] (ctl) -- (svc);
+\draw[arr] (svc) -- (repo);
+\draw[arr] (repo) -- (orm);
+\draw[arr] (orm) -- (db);
+\draw[arr,dashed] (ctl) -- (view);
+\draw[arr,dashed] (svc) -- (pdf);
+\draw[arr,dashed] (repo) -- (ent);
+\draw[arr,eggold] (view.north) |- node[pos=0.25,right,font=\scriptsize]{HTML / JSON} (client.east);
+\end{tikzpicture}

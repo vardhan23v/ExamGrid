@@ -1,0 +1,35 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  uc/.style={ellipse,draw=egnavy,fill=eglight,minimum width=3.6cm,minimum height=0.75cm,align=center,inner sep=1pt},
+  actor/.style={align=center,font=\footnotesize\bfseries},
+  ln/.style={thick,eggrey}]
+\newcommand{\stick}[2]{%
+  \begin{scope}[shift={#1}]
+  \draw[thick,egnavy] (0,0.55) circle (0.18);
+  \draw[thick,egnavy] (0,0.37)--(0,-0.15) (-0.3,0.2)--(0.3,0.2) (0,-0.15)--(-0.22,-0.55) (0,-0.15)--(0.22,-0.55);
+  \node[actor] at (0,-0.85) {#2};
+  \end{scope}}
+\draw[rounded corners=6pt,draw=egnavy,thick,fill=white] (-3.6,-7.4) rectangle (3.6,4.0);
+\node[font=\bfseries,egnavy] at (0,3.65) {ExamGrid System};
+\node[uc] (u1) at (0,3.0) {Login / Logout};
+\node[uc] (u2) at (0,2.1) {Manage Students};
+\node[uc] (u3) at (0,1.2) {Manage Faculty};
+\node[uc] (u4) at (0,0.3) {Manage Halls};
+\node[uc] (u5) at (0,-0.6) {Schedule Exams};
+\node[uc] (u6) at (0,-1.5) {Generate Seating Plan};
+\node[uc] (u7) at (0,-2.4) {Assign Invigilators};
+\node[uc] (u8) at (0,-3.3) {Export PDF Charts};
+\node[uc] (u9) at (0,-4.2) {View Duty Roster};
+\node[uc] (u10) at (0,-5.1) {Look up Seat by USN};
+\node[uc] (u11) at (0,-6.0) {View Own Seats};
+\node[uc,fill=eggold!20,draw=eggold] (u12) at (0,-6.9) {Call REST API};
+\stick{(-6,0.6)}{Exam Cell\\(ADMIN)}
+\stick{(6,-3.6)}{Faculty}
+\stick{(6,-0.6)}{Student}
+\stick{(-6,-5.4)}{Guest /\\Postman}
+\foreach \u in {u1,u2,u3,u4,u5,u6,u7,u8,u9,u12} \draw[ln] (-5.6,0.6)--(\u.west);
+\foreach \u in {u1,u9} \draw[ln] (5.6,-3.6)--(\u.east);
+\foreach \u in {u1,u10,u11} \draw[ln] (5.6,-0.6)--(\u.east);
+\foreach \u in {u10,u12} \draw[ln] (-5.6,-5.4)--(\u.west);
+\draw[-{Stealth},dashed,eggrey] (u7.east) to[out=0,in=0] node[right,font=\tiny]{$\langle\langle$requires$\rangle\rangle$} (u6.east);
+\end{tikzpicture}

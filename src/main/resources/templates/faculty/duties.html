@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Duties')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-5">
+    <h2 class="page-title mb-1">My invigilation duties</h2>
+    <p class="text-muted mb-4">
+        <span th:text="${faculty.name}">Name</span> &middot;
+        <span th:text="${faculty.facultyCode}">Code</span> &middot;
+        <span th:text="${faculty.department}">Dept</span> &middot;
+        Maximum duties: <span th:text="${faculty.maxDuties}">6</span>
+    </p>
+    <div class="card p-3">
+        <div id="rosterMessage" class="text-muted">Loading roster...</div>
+        <table class="table table-hover align-middle mb-0 d-none" id="rosterTable">
+            <thead>
+            <tr><th>#</th><th>Date</th><th>Time</th><th>Hall</th><th>Block</th></tr>
+            </thead>
+            <tbody id="rosterBody"></tbody>
+        </table>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:inline="javascript">
+    const facultyCode = /*[[${faculty.facultyCode}]]*/ "FAC101";
+
+    async function loadRoster() {
+        const message = document.getElementById("rosterMessage");
+        const table = document.getElementById("rosterTable");
+        const body = document.getElementById("rosterBody");
+        try {
+            const response = await fetch("/api/duties/faculty/" + encodeURIComponent(facultyCode));
+            const duties = await response.json();
+            if (!response.ok) {
+                message.textContent = duties.message;
+                return;
+            }
+            if (duties.length === 0) {
+                message.textContent = "No invigilation duties have been assigned to you yet.";
+                return;
+            }
+            message.textContent = "You have " + duties.length + " duty slot(s).";
+            body.innerHTML = "";
+            duties.forEach((duty, index) => {
+                const row = document.createElement("tr");
+                [index + 1, duty.examDate, duty.startTime.substring(0, 5) + " - " + duty.endTime.substring(0, 5),
+                    duty.hallName, duty.block].forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+                body.appendChild(row);
+            });
+            table.classList.remove("d-none");
+        } catch (error) {
+            message.textContent = "Could not load the roster. Please refresh the page.";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadRoster);
+</script>
+</body>
+</html>

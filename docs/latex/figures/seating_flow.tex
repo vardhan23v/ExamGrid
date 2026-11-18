@@ -1,0 +1,41 @@
+\begin{tikzpicture}[
+  font=\footnotesize, node distance=0.45cm,
+  term/.style={rounded rectangle,draw=egnavy,fill=egnavy,text=white,minimum height=0.7cm,minimum width=3cm},
+  proc/.style={rectangle,draw=egnavy,fill=eglight,rounded corners=2pt,minimum height=0.7cm,text width=5.2cm,align=center},
+  dec/.style={diamond,draw=eggold,fill=eggold!20,aspect=2.6,inner sep=1pt,text width=2.8cm,align=center},
+  err/.style={rectangle,draw=red!60!black,fill=red!8,rounded corners=2pt,text width=3.2cm,align=center,minimum height=0.7cm},
+  arr/.style={-{Stealth[length=2mm]},thick}]
+\node[term] (s) {Start (date, startTime)};
+\node[proc,below=of s] (p1) {Load exams of the slot; build one waiting queue of students per exam (branch + semester)};
+\node[dec,below=of p1] (d1) {students $>$ total hall capacity?};
+\node[err,right=0.8cm of d1] (e1) {throw InsufficientCapacity\-Exception};
+\node[proc,below=of d1] (p2) {Delete old seats and duties of the slot; sort halls by capacity (largest first)};
+\node[proc,below=of p2] (p3) {For each hall, for each seat (row by row): read left and front neighbour};
+\node[proc,below=of p3] (p4) {Pick exam with most waiting students whose subject \emph{and} branch differ from both neighbours};
+\node[dec,below=of p4] (d2) {found?};
+\node[proc,right=0.8cm of d2,text width=3.4cm] (p5) {Relax: only subject must differ};
+\node[dec,below=of d2] (d3) {found?};
+\node[dec,left=0.8cm of d3,text width=2.2cm] (d4) {spare seats left?};
+\node[proc,above=0.35cm of d4,text width=2.0cm] (skip) {leave seat empty};
+\node[proc,below=of d3] (p6) {Place next student of chosen exam; record seat (row, column, label)};
+\node[dec,below=of p6] (d5) {students left?};
+\node[proc,below=of d5] (p7) {saveAll seats; return SeatingResult};
+\node[term,below=of p7] (e) {End};
+
+\draw[arr] (s)--(p1); \draw[arr] (p1)--(d1);
+\draw[arr] (d1)--node[above]{yes}(e1);
+\draw[arr] (d1)--node[right]{no}(p2);
+\draw[arr] (p2)--(p3); \draw[arr] (p3)--(p4); \draw[arr] (p4)--(d2);
+\draw[arr] (d2)--node[right]{yes}(d3);
+\draw[arr] (d2)--node[above]{no}(p5);
+\draw[arr] (p5) |- (d3);
+\draw[arr] (d3)--node[right]{yes}(p6);
+\draw[arr] (d3)--node[above]{no}(d4);
+\draw[arr] (d4)--node[right]{yes}(skip);
+\draw[arr] (d4) |- node[pos=0.25,left,align=right]{no: place\\anyway,\\clash++} (p6.west);
+\draw[arr] (skip.north) |- (p3.west);
+\draw[arr] (p6)--(d5);
+\draw[arr] (d5)--node[right]{no}(p7);
+\draw[arr] (d5.east) -- node[above]{yes} ++(4.8,0) |- (p3.east);
+\draw[arr] (p7)--(e);
+\end{tikzpicture}

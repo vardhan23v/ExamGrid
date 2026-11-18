@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Exams')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container-fluid px-4 py-4">
+    <h2 class="page-title mb-3">Exam Timetable</h2>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card p-3">
+                <h5 th:text="${exam.id == null} ? 'Schedule exam' : 'Edit exam'">Schedule exam</h5>
+                <form th:action="@{/admin/exams/save}" th:object="${exam}" method="post" novalidate>
+                    <input type="hidden" th:field="*{id}">
+                    <div class="row">
+                        <div class="col-5 mb-2">
+                            <label class="form-label">Subject code</label>
+                            <input class="form-control text-uppercase" th:field="*{subjectCode}"
+                                   th:classappend="${#fields.hasErrors('subjectCode')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{subjectCode}"></div>
+                        </div>
+                        <div class="col-7 mb-2">
+                            <label class="form-label">Subject name</label>
+                            <input class="form-control" th:field="*{subjectName}"
+                                   th:classappend="${#fields.hasErrors('subjectName')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{subjectName}"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label">Branch</label>
+                            <select class="form-select" th:field="*{branch}" th:classappend="${#fields.hasErrors('branch')} ? 'is-invalid'">
+                                <option value="">Select</option>
+                                <option th:each="b : ${ {'CSE','ISE','ECE','EEE','ME','CV','AIML'} }" th:value="${b}" th:text="${b}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{branch}"></div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label">Semester</label>
+                            <input type="number" min="1" max="8" class="form-control" th:field="*{semester}"
+                                   th:classappend="${#fields.hasErrors('semester')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{semester}"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Exam date</label>
+                        <input type="date" class="form-control" th:field="*{examDate}"
+                               th:classappend="${#fields.hasErrors('examDate')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{examDate}"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Start time</label>
+                            <input type="time" class="form-control" th:field="*{startTime}"
+                                   th:classappend="${#fields.hasErrors('startTime')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{startTime}"></div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">End time</label>
+                            <input type="time" class="form-control" th:field="*{endTime}"
+                                   th:classappend="${#fields.hasErrors('endTime')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{endTime}"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-navy" type="submit">Save</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/exams}" th:if="${exam.id != null}">Cancel</a>
+                </form>
+                <p class="small text-muted mt-3 mb-0">All students of the chosen branch and semester write this exam.
+                    Exams with the same date and start time form one seating slot.</p>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card p-3">
+                <h5>Scheduled exams <span class="badge bg-secondary" th:text="${#lists.size(exams)}">0</span></h5>
+                <table class="table table-sm table-hover align-middle">
+                    <thead><tr><th>Code</th><th>Subject</th><th>Class</th><th>Date</th><th>Time</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="e : ${exams}">
+                        <td th:text="${e.subjectCode}"></td>
+                        <td th:text="${e.subjectName}"></td>
+                        <td th:text="${e.branch} + ' - ' + ${e.semester}"></td>
+                        <td th:text="${#temporals.format(e.examDate, 'dd-MM-yyyy')}"></td>
+                        <td th:text="${e.startTime} + ' - ' + ${e.endTime}"></td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/exams/{id}/edit(id=${e.id})}">Edit</a>
+                            <form th:action="@{/admin/exams/{id}/delete(id=${e.id})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete this exam and its seat allocations?');">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Faculty')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container-fluid px-4 py-4">
+    <h2 class="page-title mb-3">Faculty</h2>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card p-3">
+                <h5 th:text="${faculty.id == null} ? 'Add faculty' : 'Edit faculty'">Add faculty</h5>
+                <form th:action="@{/admin/faculty/save}" th:object="${faculty}" method="post" novalidate>
+                    <input type="hidden" th:field="*{id}">
+                    <div class="mb-2">
+                        <label class="form-label">Faculty code</label>
+                        <input class="form-control text-uppercase" th:field="*{facultyCode}" th:readonly="${faculty.id != null}"
+                               th:classappend="${#fields.hasErrors('facultyCode')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{facultyCode}"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Name</label>
+                        <input class="form-control" th:field="*{name}" th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{name}"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label">Department</label>
+                            <input class="form-control text-uppercase" th:field="*{department}"
+                                   th:classappend="${#fields.hasErrors('department')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{department}"></div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label">Max duties</label>
+                            <input type="number" min="1" max="20" class="form-control" th:field="*{maxDuties}"
+                                   th:classappend="${#fields.hasErrors('maxDuties')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{maxDuties}"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" th:field="*{email}" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{email}"></div>
+                    </div>
+                    <button class="btn btn-navy" type="submit">Save</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/faculty}" th:if="${faculty.id != null}">Cancel</a>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card p-3">
+                <div class="d-flex justify-content-between mb-2">
+                    <h5 class="mb-0">Faculty members <span class="badge bg-secondary" th:text="${#lists.size(facultyList)}">0</span></h5>
+                    <input type="text" class="form-control form-control-sm w-auto" placeholder="Filter..." id="tableFilter">
+                </div>
+                <div class="table-scroll">
+                    <table class="table table-sm table-hover align-middle" id="dataTable">
+                        <thead><tr><th>Code</th><th>Name</th><th>Dept</th><th>Max duties</th><th>Email</th><th></th></tr></thead>
+                        <tbody>
+                        <tr th:each="f : ${facultyList}">
+                            <td th:text="${f.facultyCode}"></td>
+                            <td th:text="${f.name}"></td>
+                            <td th:text="${f.department}"></td>
+                            <td th:text="${f.maxDuties}"></td>
+                            <td class="small" th:text="${f.email}"></td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/faculty/{id}/edit(id=${f.id})}">Edit</a>
+                                <form th:action="@{/admin/faculty/{id}/delete(id=${f.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this faculty member and their duties?');">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/table-filter.js}"></script>
+</body>
+</html>

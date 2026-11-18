@@ -1,0 +1,31 @@
+\begin{tikzpicture}[
+  font=\footnotesize, node distance=0.45cm,
+  term/.style={rounded rectangle,draw=egnavy,fill=egnavy,text=white,minimum height=0.7cm,minimum width=3cm},
+  proc/.style={rectangle,draw=egnavy,fill=eglight,rounded corners=2pt,minimum height=0.7cm,text width=5.6cm,align=center},
+  dec/.style={diamond,draw=eggold,fill=eggold!20,aspect=2.6,inner sep=1pt,text width=2.6cm,align=center},
+  err/.style={rectangle,draw=red!60!black,fill=red!8,rounded corners=2pt,text width=3.0cm,align=center,minimum height=0.7cm},
+  arr/.style={-{Stealth[length=2mm]},thick}]
+\node[term] (s) {Start (date, startTime)};
+\node[dec,below=of s] (d0) {seating exists for slot?};
+\node[err,right=0.8cm of d0] (e0) {throw Allocation\-Exception};
+\node[proc,below=of d0] (p1) {Count students per hall; endTime = latest end time of exams in slot};
+\node[proc,below=of p1] (p2) {Delete old duties of the slot; load all faculty and all existing duties};
+\node[proc,below=of p2] (p3) {For each used hall: needed = $\lceil$students / 30$\rceil$ (minimum 1)};
+\node[proc,below=of p3] (p4) {Candidates = faculty with duties $<$ maxDuties \textbf{and} no duty overlapping [startTime, endTime) on that date};
+\node[dec,below=of p4] (d1) {any candidate?};
+\node[err,right=0.8cm of d1] (e1) {throw Allocation\-Exception (rollback)};
+\node[proc,below=of d1] (p5) {Choose candidate with fewest duties (tie: name order); create duty; update workload map};
+\node[dec,below=of p5] (d2) {more seats to cover?};
+\node[proc,below=of d2] (p6) {saveAll duties; return InvigilationResult};
+\node[term,below=of p6] (e) {End};
+\draw[arr] (s)--(d0);
+\draw[arr] (d0)--node[above]{no}(e0);
+\draw[arr] (d0)--node[right]{yes}(p1);
+\draw[arr] (p1)--(p2); \draw[arr] (p2)--(p3); \draw[arr] (p3)--(p4); \draw[arr] (p4)--(d1);
+\draw[arr] (d1)--node[above]{no}(e1);
+\draw[arr] (d1)--node[right]{yes}(p5);
+\draw[arr] (p5)--(d2);
+\draw[arr] (d2)--node[right]{no}(p6);
+\draw[arr] (d2.west) -- node[above]{yes} ++(-1.3,0) |- (p4.west);
+\draw[arr] (p6)--(e);
+\end{tikzpicture}

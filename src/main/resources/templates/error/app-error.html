@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Error')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-5">
+    <div class="card p-5 text-center mx-auto" style="max-width: 640px;">
+        <div class="display-4 fw-bold text-danger" th:text="${status}">400</div>
+        <h4 class="mt-2" th:text="${title}">Something went wrong</h4>
+        <p class="text-muted" th:text="${message}">Details</p>
+        <div>
+            <a class="btn btn-navy" href="javascript:history.back()">Go back</a>
+            <a class="btn btn-outline-secondary" th:href="@{/dashboard}">Dashboard</a>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Seating Plan')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container-fluid px-4 py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h2 class="page-title mb-0">Seating Plan</h2>
+            <div class="text-muted" th:text="${#temporals.format(date, 'EEE, dd MMM yyyy')} + ' at ' + ${startTime}"></div>
+        </div>
+        <div class="d-flex gap-2">
+            <form th:action="@{/admin/allocation/invigilation}" method="post">
+                <input type="hidden" name="date" th:value="${date}">
+                <input type="hidden" name="startTime" th:value="${startTime}">
+                <button class="btn btn-warning" type="submit" th:disabled="${#lists.isEmpty(layouts)}">Assign invigilators</button>
+            </form>
+            <a class="btn btn-outline-danger" target="_blank" th:if="${!#lists.isEmpty(layouts)}"
+               th:href="@{/admin/reports/seating(date=${date},startTime=${startTime})}">Download PDF</a>
+        </div>
+    </div>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="alert alert-info" th:if="${#lists.isEmpty(layouts)}">
+        No seating plan exists for this slot yet. Go to <a th:href="@{/admin/allocation}">Allocation</a> and generate it.
+    </div>
+
+    <div class="card p-3 mb-4" th:each="hall : ${layouts}">
+        <div class="d-flex justify-content-between mb-2">
+            <h5 class="mb-0"><span th:text="${hall.hallName}"></span> <small class="text-muted" th:text="${hall.block}"></small></h5>
+            <span class="badge bg-secondary" th:text="${hall.occupied} + ' / ' + ${hall.rows * hall.columns} + ' seats used'"></span>
+        </div>
+        <div class="board">Black board / Invigilator desk</div>
+        <div class="hall-grid" th:style="'grid-template-columns: repeat(' + ${hall.columns} + ', minmax(70px, 1fr));'">
+            <th:block th:each="row : ${hall.grid}">
+                <div th:each="cell : ${row}" class="seat"
+                     th:classappend="${cell.empty} ? 'empty' : ('seat-c' + ${cell.colorIndex})">
+                    <div class="seat-label" th:text="${cell.label}">A1</div>
+                    <div th:if="${!cell.empty}" th:text="${cell.usn}">USN</div>
+                    <div th:if="${!cell.empty}" class="fw-semibold" th:text="${cell.subjectCode}">SUB</div>
+                    <div th:if="${cell.empty}">empty</div>
+                </div>
+            </th:block>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
