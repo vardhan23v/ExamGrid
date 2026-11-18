@@ -14,12 +14,6 @@
 
 CS3603-1 Java and Spring Framework Laboratory Mini Project, V Semester CSE, NMAM Institute of Technology, Nitte.
 
-| Sl. No. | Name | USN |
-|---|---|---|
-| 1 | Prajwal Jogi | NNM25CS522 |
-| 2 | Prajwal Acharya | NNM25CS521 |
-| 3 | Sathwik P Shetty | NNM24CS224 |
-| 4 | Satvik Hegde | NNM24CS225 |
 
 ## Tech stack
 
